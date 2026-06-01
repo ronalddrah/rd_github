@@ -302,49 +302,47 @@ CLASS lcl_mass_update IMPLEMENTATION.
 
     g_upd_date = sy-datum. g_upd_time = sy-uzeit.
 
+    IF pa_so = abap_true.
+      LOOP AT gt_alv_data ASSIGNING FIELD-SYMBOL(<ls_group_so>)
+           GROUP BY ( vbeln = <ls_group_so>-vbeln )
+           ASSIGNING FIELD-SYMBOL(<ls_group_key_so>).
 
-    LOOP AT gt_alv_data ASSIGNING FIELD-SYMBOL(<ls_data>).
-      REFRESH lt_return.
-      IF pa_so = abap_true.
-        " Sales Order Update
-        CLEAR: ls_header,
-               ls_headerx.
-        REFRESH: lt_item, lt_itemx, lt_so_sched, lt_so_schedx.
+        REFRESH: lt_return, lt_item, lt_itemx, lt_so_sched, lt_so_schedx.
+        CLEAR: ls_header, ls_headerx.
 
-        IF pa_prio = abap_true.
-          ls_headerx-updateflag = 'U'.
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          dlv_prio   = <ls_data>-lprio ) TO lt_item.
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          updateflag   = 'U'
-                          dlv_prio   = 'X' ) TO lt_itemx.
-          ls_headerx-updateflag = 'U'.
-        ELSEIF pa_deld = abap_true.
-          ls_header-req_date_h = <ls_data>-vdatu.
-          ls_headerx-req_date_h = 'X'.
-          ls_headerx-updateflag = 'U'.
+        LOOP AT GROUP <ls_group_key_so> ASSIGNING FIELD-SYMBOL(<ls_item_so>).
+          IF pa_prio = abap_true.
+            ls_headerx-updateflag = 'U'.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            dlv_prio   = <ls_item_so>-lprio ) TO lt_item.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            updateflag   = 'U'
+                            dlv_prio   = 'X' ) TO lt_itemx.
+          ELSEIF pa_deld = abap_true.
+            ls_header-req_date_h = <ls_item_so>-vdatu.
+            ls_headerx-req_date_h = 'X'.
+            ls_headerx-updateflag = 'U'.
 
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          sched_line = '0001'         "always first line
-                          REQ_DATE   = <ls_data>-vdatu ) TO lt_so_sched.
-*"                          delv_date  = <ls_data>-vdatu ) TO lt_so_sched.
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          sched_line = '0001'
-                          updateflag   = 'U'
-                          REQ_DATE   = 'X' ) TO lt_so_schedx.
-
-        ELSEIF pa_dele = abap_true.
-          ls_headerx-updateflag = 'U'.
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          reason_rej = <ls_data>-abgru ) TO lt_item.
-          APPEND VALUE #( itm_number = <ls_data>-posnr
-                          updateflag   = 'U'
-                          reason_rej = 'X' ) TO lt_itemx.
-        ENDIF.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            sched_line = '0001'         "always first line
+                            REQ_DATE   = <ls_item_so>-vdatu ) TO lt_so_sched.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            sched_line = '0001'
+                            updateflag   = 'U'
+                            REQ_DATE   = 'X' ) TO lt_so_schedx.
+          ELSEIF pa_dele = abap_true.
+            ls_headerx-updateflag = 'U'.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            reason_rej = <ls_item_so>-abgru ) TO lt_item.
+            APPEND VALUE #( itm_number = <ls_item_so>-posnr
+                            updateflag   = 'U'
+                            reason_rej = 'X' ) TO lt_itemx.
+          ENDIF.
+        ENDLOOP.
 
         CALL FUNCTION 'BAPI_SALESORDER_CHANGE'
           EXPORTING
-            salesdocument    = <ls_data>-vbeln
+            salesdocument    = <ls_group_key_so>-vbeln
             order_header_in  = ls_header
             order_header_inx = ls_headerx
           TABLES
@@ -354,48 +352,78 @@ CLASS lcl_mass_update IMPLEMENTATION.
             schedule_lines   = lt_so_sched
             schedule_linesx  = lt_so_schedx.
 
-      ELSEIF pa_po = abap_true.
-        " Purchase Order Update
-        REFRESH: lt_po_item, lt_po_itemx, lt_po_sched, lt_po_schedx, lt_po_ship, lt_po_shipx.
-
-        IF pa_prio = abap_true.
-          APPEND VALUE #( po_item = <ls_data>-ebelp ) TO lt_po_item.
-          APPEND VALUE #( po_item = <ls_data>-ebelp ) TO lt_po_itemx.
-          APPEND VALUE #( po_item  = <ls_data>-ebelp
-                          dlv_prio = <ls_data>-lprio ) TO lt_po_ship.
-          APPEND VALUE #( po_item  = <ls_data>-ebelp
-                          dlv_prio = 'X' ) TO lt_po_shipx.
-        ELSEIF pa_deld = abap_true.
-          " Fetch all schedule lines for the item to ensure full coverage
-          SELECT etenr FROM eket
-            WHERE ebeln = @<ls_data>-ebeln
-              AND ebelp = @<ls_data>-ebelp
-            INTO TABLE @DATA(lt_eket_lines).
-
-          LOOP AT lt_eket_lines INTO DATA(ls_eket).
-            APPEND VALUE #( po_item       = <ls_data>-ebelp
-                            sched_line    = ls_eket-etenr
-                            delivery_date = <ls_data>-eindt ) TO lt_po_sched.
-            APPEND VALUE #( po_item       = <ls_data>-ebelp
-                            sched_line    = ls_eket-etenr
-                            delivery_date = 'X' ) TO lt_po_schedx.
+        " Handle results for the group
+        IF line_exists( lt_return[ type = 'E' ] ).
+          LOOP AT GROUP <ls_group_key_so> ASSIGNING FIELD-SYMBOL(<ls_data_err_so>).
+            <ls_data_err_so>-status = icon_led_red.
+            LOOP AT lt_return INTO DATA(ls_ret_so) WHERE type = 'E'.
+              <ls_data_err_so>-message = <ls_data_err_so>-message && ls_ret_so-message.
+            ENDLOOP.
           ENDLOOP.
-
-          IF lt_eket_lines IS INITIAL. " Fallback to first line
-            APPEND VALUE #( po_item       = <ls_data>-ebelp
-                            sched_line    = '0001'
-                            delivery_date = <ls_data>-eindt ) TO lt_po_sched.
+        ELSE.
+          IF pa_sim = abap_false.
+            CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = abap_true.
+            LOOP AT GROUP <ls_group_key_so> ASSIGNING FIELD-SYMBOL(<ls_data_suc_so>).
+              <ls_data_suc_so>-status  = icon_led_green.
+              <ls_data_suc_so>-message = 'Success'.
+              save_log( is_data = CORRESPONDING #( <ls_data_suc_so> ) ).
+            ENDLOOP.
+          ELSE.
+            LOOP AT GROUP <ls_group_key_so> ASSIGNING FIELD-SYMBOL(<ls_data_sim_so>).
+              <ls_data_sim_so>-status  = icon_led_yellow.
+              <ls_data_sim_so>-message = 'Simulation successful'.
+            ENDLOOP.
           ENDIF.
-        ELSEIF pa_dele = abap_true.
-          APPEND VALUE #( po_item    = <ls_data>-ebelp
-                          delete_ind = <ls_data>-loekz ) TO lt_po_item.
-          APPEND VALUE #( po_item    = <ls_data>-ebelp
-                          delete_ind = 'X' ) TO lt_po_itemx.
         ENDIF.
+      ENDLOOP.
+
+    ELSEIF pa_po = abap_true.
+      LOOP AT gt_alv_data ASSIGNING FIELD-SYMBOL(<ls_group_po>)
+           GROUP BY ( ebeln = <ls_group_po>-ebeln )
+           ASSIGNING FIELD-SYMBOL(<ls_group_key_po>).
+
+        REFRESH: lt_return, lt_po_item, lt_po_itemx, lt_po_sched, lt_po_schedx, lt_po_ship, lt_po_shipx.
+
+        LOOP AT GROUP <ls_group_key_po> ASSIGNING FIELD-SYMBOL(<ls_item_po>).
+          IF pa_prio = abap_true.
+            APPEND VALUE #( po_item = <ls_item_po>-ebelp ) TO lt_po_item.
+            APPEND VALUE #( po_item = <ls_item_po>-ebelp ) TO lt_po_itemx.
+            APPEND VALUE #( po_item  = <ls_item_po>-ebelp
+                            dlv_prio = <ls_item_po>-lprio ) TO lt_po_ship.
+            APPEND VALUE #( po_item  = <ls_item_po>-ebelp
+                            dlv_prio = 'X' ) TO lt_po_shipx.
+          ELSEIF pa_deld = abap_true.
+            " Fetch all schedule lines for the item to ensure full coverage
+            SELECT etenr FROM eket
+              WHERE ebeln = @<ls_item_po>-ebeln
+                AND ebelp = @<ls_item_po>-ebelp
+              INTO TABLE @DATA(lt_eket_lines).
+
+            LOOP AT lt_eket_lines INTO DATA(ls_eket).
+              APPEND VALUE #( po_item       = <ls_item_po>-ebelp
+                              sched_line    = ls_eket-etenr
+                              delivery_date = <ls_item_po>-eindt ) TO lt_po_sched.
+              APPEND VALUE #( po_item       = <ls_item_po>-ebelp
+                              sched_line    = ls_eket-etenr
+                              delivery_date = 'X' ) TO lt_po_schedx.
+            ENDLOOP.
+
+            IF lt_eket_lines IS INITIAL. " Fallback to first line
+              APPEND VALUE #( po_item       = <ls_item_po>-ebelp
+                              sched_line    = '0001'
+                              delivery_date = <ls_item_po>-eindt ) TO lt_po_sched.
+            ENDIF.
+          ELSEIF pa_dele = abap_true.
+            APPEND VALUE #( po_item    = <ls_item_po>-ebelp
+                            delete_ind = <ls_item_po>-loekz ) TO lt_po_item.
+            APPEND VALUE #( po_item    = <ls_item_po>-ebelp
+                            delete_ind = 'X' ) TO lt_po_itemx.
+          ENDIF.
+        ENDLOOP.
 
         CALL FUNCTION 'BAPI_PO_CHANGE'
           EXPORTING
-            purchaseorder = <ls_data>-ebeln
+            purchaseorder = <ls_group_key_po>-ebeln
           TABLES
             return        = lt_return
             poitem        = lt_po_item
@@ -404,31 +432,32 @@ CLASS lcl_mass_update IMPLEMENTATION.
             poschedulex   = lt_po_schedx
             poshipping    = lt_po_ship
             poshippingx   = lt_po_shipx.
-      ENDIF.
 
-      " Handle results
-      IF line_exists( lt_return[ type = 'E' ] ).
-        <ls_data>-status = icon_led_red.
-        LOOP AT lt_return INTO DATA(ls_ret) WHERE type = 'E'.
-          <ls_data>-message = <ls_data>-message && ls_ret-message.
-        ENDLOOP.
-      ELSE.
-        IF pa_sim = abap_false.
-          CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-            EXPORTING
-              wait = abap_true.
-          <ls_data>-status  = icon_led_green.
-          <ls_data>-message = 'Success'.
-
-          ls_save = CORRESPONDING #( <ls_data> ).
-          save_log( is_data = ls_save ).
-          " save_log( VALUE #( ( <ls_data> ) ) ).
+        " Handle results for the group
+        IF line_exists( lt_return[ type = 'E' ] ).
+          LOOP AT GROUP <ls_group_key_po> ASSIGNING FIELD-SYMBOL(<ls_data_err_po>).
+            <ls_data_err_po>-status = icon_led_red.
+            LOOP AT lt_return INTO DATA(ls_ret_po) WHERE type = 'E'.
+              <ls_data_err_po>-message = <ls_data_err_po>-message && ls_ret_po-message.
+            ENDLOOP.
+          ENDLOOP.
         ELSE.
-          <ls_data>-status  = icon_led_yellow.
-          <ls_data>-message = 'Simulation successful'.
+          IF pa_sim = abap_false.
+            CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = abap_true.
+            LOOP AT GROUP <ls_group_key_po> ASSIGNING FIELD-SYMBOL(<ls_data_suc_po>).
+              <ls_data_suc_po>-status  = icon_led_green.
+              <ls_data_suc_po>-message = 'Success'.
+              save_log( is_data = CORRESPONDING #( <ls_data_suc_po> ) ).
+            ENDLOOP.
+          ELSE.
+            LOOP AT GROUP <ls_group_key_po> ASSIGNING FIELD-SYMBOL(<ls_data_sim_po>).
+              <ls_data_sim_po>-status  = icon_led_yellow.
+              <ls_data_sim_po>-message = 'Simulation successful'.
+            ENDLOOP.
+          ENDIF.
         ENDIF.
-      ENDIF.
-    ENDLOOP.
+      ENDLOOP.
+    ENDIF.
 
     go_alv->refresh_table_display( ).
   ENDMETHOD.
