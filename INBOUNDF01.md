@@ -25,7 +25,7 @@ DATA: BEGIN OF ty_mch1_buf,
         werks TYPE werks_d,
         charg TYPE charg_d,
       END OF ty_mch1_buf.
-DATA: gt_mch1_buf HASHED TABLE OF ty_mch1_buf WITH UNIQUE KEY matnr werks charg.
+DATA: gt_mch1_buf SORTED TABLE OF ty_mch1_buf WITH NON-UNIQUE KEY matnr charg.
 
 DATA: BEGIN OF ty_plaf_buf,
         plnum TYPE plnum,
@@ -155,8 +155,10 @@ FORM zarepbf_idoc_parse.
   IF lt_mch1_keys IS NOT INITIAL.
     SORT lt_mch1_keys BY matnr werks charg.
     DELETE ADJACENT DUPLICATES FROM lt_mch1_keys COMPARING matnr werks charg.
-    SELECT matnr, werks, charg FROM mch1 INTO TABLE @gt_mch1_buf
-      FOR ALL ENTRIES IN @lt_mch1_keys WHERE matnr = @lt_mch1_keys-matnr AND werks = @lt_mch1_keys-werks AND charg = @lt_mch1_keys-charg.
+    " MCH1 selection (cross-plant batch existence)
+    SELECT matnr, charg FROM mch1 INTO CORRESPONDING FIELDS OF TABLE @gt_mch1_buf
+      FOR ALL ENTRIES IN @lt_mch1_keys WHERE matnr = @lt_mch1_keys-matnr AND charg = @lt_mch1_keys-charg.
+    " MSEG selection (production GRs)
     SELECT matnr, werks, charg, aufnr FROM mseg INTO TABLE @gt_mseg_buf
       FOR ALL ENTRIES IN @lt_mch1_keys
       WHERE matnr = @lt_mch1_keys-matnr AND werks = @lt_mch1_keys-werks AND charg = @lt_mch1_keys-charg AND bwart = '131'.
@@ -574,12 +576,12 @@ FORM zarepbf_post.
   DATA: lv_umrez        TYPE umrez,
         lv_meins        TYPE meins,
         lv_backflquant  TYPE i,
-        ls_bapi_gen     TYPE bapirepmanconf1_datgen,
-        ls_bapi_ext     TYPE bapirepmanconf1_datext,
-        lt_bapi_item    TYPE TABLE OF bapirepmanconf1_item,
+        ls_bapi_gen     TYPE bapi_rm_datgen,
+        ls_bapi_ext     TYPE bapi_rm_datext,
+        lt_bapi_item    TYPE TABLE OF bapi_rm_item,
         ls_bapi_return  TYPE bapiret2,
         lv_conf_confirm TYPE bapi_conf_key-conf_confirm,
-        lv_conf_counter TYPE bapi_conf_key-conf_counter,
+        lv_conf_counter TYPE bapi_conf_key-conf_confirm,
         lv_m_doc        TYPE bapi_conf_key-m_doc,
         lv_m_year       TYPE bapi_conf_key-m_year.
 
@@ -588,16 +590,16 @@ FORM zarepbf_post.
     CLEAR: ls_bapi_gen, ls_bapi_ext, lt_bapi_item, ls_bapi_return, lv_conf_confirm, lv_conf_counter, lv_m_doc, lv_m_year.
     ADD 1 TO trans_called.
 
-    ls_bapi_gen-material      = it_re-materialnr.
-    ls_bapi_gen-plant         = it_re-prodplant.
+    ls_bapi_gen-material_long  = it_re-material_long.
+    ls_bapi_gen-plant          = it_re-prodplant.
     DATA(lv_qty_in) = it_re-backflquant.
     TRANSLATE lv_qty_in USING ',.'.
-    ls_bapi_gen-backflush_qty = abs( CONV erfmg( lv_qty_in ) ).
-    ls_bapi_gen-unitofmeasure = it_re-unitofmeasure.
-    ls_bapi_gen-post_date     = it_re-postdate.
-    ls_bapi_gen-doc_date      = it_re-docdate.
-    ls_bapi_gen-batch         = it_re-batch.
-    ls_bapi_gen-storage_loc   = it_re-storageloc.
+    ls_bapi_gen-bckfl_qty      = abs( CONV erfmg( lv_qty_in ) ).
+    ls_bapi_gen-unitofmeas     = it_re-unitofmeasure.
+    ls_bapi_gen-post_date      = it_re-postdate.
+    ls_bapi_gen-doc_date       = it_re-docdate.
+    ls_bapi_gen-batch          = it_re-batch.
+    ls_bapi_gen-storageloc     = it_re-storageloc.
 
     CASE it_re-insmk.
       WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
@@ -605,41 +607,41 @@ FORM zarepbf_post.
       WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
 
-    ls_bapi_ext-production_date = it_re-y0_proddate.
-    ls_bapi_ext-expiry_date     = it_re-y0_seldate.
-    ls_bapi_ext-backflush_type  = '1'. "Assembly backflush
+    ls_bapi_ext-proddate    = it_re-y0_proddate.
+    ls_bapi_ext-vfdat       = it_re-y0_seldate.
+    ls_bapi_ext-bckfltype   = '1'. "Assembly backflush
 
     PERFORM map_header_text_bapi USING it_re 'WE' CHANGING ls_bapi_gen-header_txt.
-    PERFORM map_prod_version_bapi USING it_re CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
+    PERFORM map_prod_version_bapi USING it_re CHANGING ls_bapi_gen-prod_ver ls_bapi_gen-planned_or.
 
     " Component corrections
     LOOP AT it_ra WHERE y0_hmat = it_re-materialnr AND y0_hcharg = it_re-batch.
       DATA(lv_ra_qty) = it_ra-backflquant.
       TRANSLATE lv_ra_qty USING ',.'.
-      APPEND VALUE #( material = it_ra-materialnr
-                      plant    = it_ra-prodplant
-                      entry_qnt = abs( CONV erfmg( lv_ra_qty ) )
-                      entry_uom = it_ra-unitofmeasure
-                      stge_loc  = it_ra-storageloc
-                      batch     = it_ra-batch ) TO lt_bapi_item.
+      APPEND VALUE #( material_long = it_ra-material_long
+                      plant         = it_ra-prodplant
+                      bckfl_qty     = abs( CONV erfmg( lv_ra_qty ) )
+                      unitofmeas    = it_ra-unitofmeasure
+                      storageloc    = it_ra-storageloc
+                      batch         = it_ra-batch ) TO lt_bapi_item.
       DELETE it_ra.
     ENDLOOP.
 
     CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
       EXPORTING
-        backflushdatagen = ls_bapi_gen
-        backflushdatext  = ls_bapi_ext
-        reversal         = abap_true
+        bflushdatagen = ls_bapi_gen
+        bflushdatext  = ls_bapi_ext
+        reversal      = abap_true
       IMPORTING
-        return           = ls_bapi_return
-        confirmation     = lv_conf_confirm
-        confcounter      = lv_conf_counter
-        mat_doc          = lv_m_doc
-        doc_year         = lv_m_year
+        return        = ls_bapi_return
+        confirmation  = lv_conf_confirm
+        confcounter   = lv_conf_counter
+        mat_doc       = lv_m_doc
+        doc_year      = lv_m_year
       TABLES
-        itemdata         = lt_bapi_item.
+        itemdata      = lt_bapi_item.
 
-    PERFORM handle_bapi_return USING ls_bapi_return 'RE' it_re-materialnr it_re-batch.
+    PERFORM handle_bapi_return USING ls_bapi_return 'RE' it_re-materialnr it_re-batch space.
   ENDLOOP.
 
 * Process WE
@@ -647,16 +649,16 @@ FORM zarepbf_post.
     CLEAR: ls_bapi_gen, ls_bapi_ext, lt_bapi_item, ls_bapi_return, lv_conf_confirm, lv_conf_counter, lv_m_doc, lv_m_year.
     ADD 1 TO trans_called.
 
-    ls_bapi_gen-material      = it_we-materialnr.
-    ls_bapi_gen-plant         = it_we-prodplant.
+    ls_bapi_gen-material_long  = it_we-material_long.
+    ls_bapi_gen-plant          = it_we-prodplant.
     DATA(lv_we_qty) = it_we-backflquant.
     TRANSLATE lv_we_qty USING ',.'.
-    ls_bapi_gen-backflush_qty = abs( CONV erfmg( lv_we_qty ) ).
-    ls_bapi_gen-unitofmeasure = it_we-unitofmeasure.
-    ls_bapi_gen-post_date     = it_we-postdate.
-    ls_bapi_gen-doc_date      = it_we-docdate.
-    ls_bapi_gen-batch         = it_we-batch.
-    ls_bapi_gen-storage_loc   = it_we-storageloc.
+    ls_bapi_gen-bckfl_qty      = abs( CONV erfmg( lv_we_qty ) ).
+    ls_bapi_gen-unitofmeas     = it_we-unitofmeasure.
+    ls_bapi_gen-post_date      = it_we-postdate.
+    ls_bapi_gen-doc_date       = it_we-docdate.
+    ls_bapi_gen-batch          = it_we-batch.
+    ls_bapi_gen-storageloc     = it_we-storageloc.
 
     CASE it_we-insmk.
       WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
@@ -664,40 +666,40 @@ FORM zarepbf_post.
       WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
 
-    ls_bapi_ext-production_date = it_we-y0_proddate.
-    ls_bapi_ext-expiry_date     = it_we-y0_seldate.
-    ls_bapi_ext-backflush_type  = '1'. "Assembly backflush
+    ls_bapi_ext-proddate    = it_we-y0_proddate.
+    ls_bapi_ext-vfdat       = it_we-y0_seldate.
+    ls_bapi_ext-bckfltype   = '1'. "Assembly backflush
 
     PERFORM map_header_text_bapi USING it_we 'WE' CHANGING ls_bapi_gen-header_txt.
-    PERFORM map_prod_version_bapi USING it_we CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
+    PERFORM map_prod_version_bapi USING it_we CHANGING ls_bapi_gen-prod_ver ls_bapi_gen-planned_or.
 
     " Component corrections
     LOOP AT it_wa WHERE y0_hmat = it_we-materialnr AND y0_hcharg = it_we-batch.
       DATA(lv_wa_qty) = it_wa-backflquant.
       TRANSLATE lv_wa_qty USING ',.'.
-      APPEND VALUE #( material = it_wa-materialnr
-                      plant    = it_wa-prodplant
-                      entry_qnt = abs( CONV erfmg( lv_wa_qty ) )
-                      entry_uom = it_wa-unitofmeasure
-                      stge_loc  = it_wa-storageloc
-                      batch     = it_wa-batch ) TO lt_bapi_item.
+      APPEND VALUE #( material_long = it_wa-material_long
+                      plant         = it_wa-prodplant
+                      bckfl_qty     = abs( CONV erfmg( lv_wa_qty ) )
+                      unitofmeas    = it_wa-unitofmeasure
+                      storageloc    = it_wa-storageloc
+                      batch         = it_wa-batch ) TO lt_bapi_item.
       DELETE it_wa.
     ENDLOOP.
 
     CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
       EXPORTING
-        backflushdatagen = ls_bapi_gen
-        backflushdatext  = ls_bapi_ext
+        bflushdatagen = ls_bapi_gen
+        bflushdatext  = ls_bapi_ext
       IMPORTING
-        return           = ls_bapi_return
-        confirmation     = lv_conf_confirm
-        confcounter      = lv_conf_counter
-        mat_doc          = lv_m_doc
-        doc_year         = lv_m_year
+        return        = ls_bapi_return
+        confirmation  = lv_conf_confirm
+        confcounter   = lv_conf_counter
+        mat_doc       = lv_m_doc
+        doc_year      = lv_m_year
       TABLES
-        itemdata         = lt_bapi_item.
+        itemdata      = lt_bapi_item.
 
-    PERFORM handle_bapi_return USING ls_bapi_return 'WE' it_we-materialnr it_we-batch.
+    PERFORM handle_bapi_return USING ls_bapi_return 'WE' it_we-materialnr it_we-batch space.
   ENDLOOP.
 
 * if WA's are left (WA's without corresponding WE) process them
@@ -730,42 +732,44 @@ FORM zarepbf_post.
       ENDIF.
     ENDIF.
 
-    ls_bapi_gen-material      = it_wa-y0_hmat.
-    ls_bapi_gen-plant         = it_wa-prodplant.
-    DATA(lv_comp_qty) = it_wa-backflquant.
-    TRANSLATE lv_comp_qty USING ',.'.
-    ls_bapi_gen-backflush_qty = 0. "Component only
-    ls_bapi_gen-post_date     = it_wa-postdate.
-    ls_bapi_gen-doc_date      = it_wa-docdate.
-    ls_bapi_gen-batch         = it_wa-y0_hcharg.
+    ls_bapi_gen-material_long  = it_wa-y0_hmat_long.
+    ls_bapi_gen-plant          = it_wa-prodplant.
+    DATA(lv_comp_qty_raw) = it_wa-backflquant.
+    TRANSLATE lv_comp_qty_raw USING ',.'.
+    ls_bapi_gen-bckfl_qty      = 0. "Component only
+    ls_bapi_gen-post_date      = it_wa-postdate.
+    ls_bapi_gen-doc_date       = it_wa-docdate.
+    ls_bapi_gen-batch          = it_wa-y0_hcharg.
 
-    ls_bapi_ext-production_date = it_wa-y0_proddate.
-    ls_bapi_ext-expiry_date     = it_wa-y0_seldate.
-    ls_bapi_ext-backflush_type  = '2'. "Component backflush
+    ls_bapi_ext-proddate    = it_wa-y0_proddate.
+    ls_bapi_ext-vfdat       = it_wa-y0_seldate.
+    ls_bapi_ext-bckfltype   = '2'. "Component backflush
 
     PERFORM map_header_text_bapi USING it_wa 'WA' CHANGING ls_bapi_gen-header_txt.
 
-    APPEND VALUE #( material = it_wa-materialnr
-                    plant    = it_wa-prodplant
-                    entry_qnt = abs( CONV erfmg( lv_comp_qty ) )
-                    entry_uom = it_wa-unitofmeasure
-                    stge_loc  = it_wa-storageloc
-                    batch     = it_wa-batch ) TO lt_bapi_item.
+    DATA(lv_comp_qty_mapped) = it_wa-backflquant.
+    TRANSLATE lv_comp_qty_mapped USING ',.'.
+    APPEND VALUE #( material_long = it_wa-material_long
+                    plant         = it_wa-prodplant
+                    bckfl_qty     = abs( CONV erfmg( lv_comp_qty_mapped ) )
+                    unitofmeas    = it_wa-unitofmeasure
+                    storageloc    = it_wa-storageloc
+                    batch         = it_wa-batch ) TO lt_bapi_item.
 
     CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
       EXPORTING
-        backflushdatagen = ls_bapi_gen
-        backflushdatext  = ls_bapi_ext
+        bflushdatagen = ls_bapi_gen
+        bflushdatext  = ls_bapi_ext
       IMPORTING
-        return           = ls_bapi_return
-        confirmation     = lv_conf_confirm
-        confcounter      = lv_conf_counter
-        mat_doc          = lv_m_doc
-        doc_year         = lv_m_year
+        return        = ls_bapi_return
+        confirmation  = lv_conf_confirm
+        confcounter   = lv_conf_counter
+        mat_doc       = lv_m_doc
+        doc_year      = lv_m_year
       TABLES
-        itemdata         = lt_bapi_item.
+        itemdata      = lt_bapi_item.
 
-    PERFORM handle_bapi_return USING ls_bapi_return 'WA' it_wa-materialnr it_wa-y0_hmat.
+    PERFORM handle_bapi_return USING ls_bapi_return 'WA' it_wa-materialnr it_wa-y0_hmat it_wa-y0_hcharg.
   ENDLOOP.
 
 ENDFORM.                    " ZAREPBF_POST
@@ -1375,20 +1379,20 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
 *   Table Y0PP_REM_SERVICE will not be used any more.
 *   Instead corresponding Y0CS Material will be used
 *   Check date - old or new part
-    SELECT SINGLE * FROM y0pp_rem_srvplnt WHERE werks = it_gr-prodplant.
-    IF sy-subrc = 0.
+    IF line_exists( gt_rem_srvplnt_buf[ werks = it_gr-prodplant ] ).
       h_plnt_excpt = 'X'.
     ELSE.
       CLEAR h_plnt_excpt.
     ENDIF.
 
-    SELECT SINGLE * FROM y0pp_rem_active.
-    IF y0pp_rem_active-datum LE it_gr-postdate AND sy-subrc IS INITIAL AND h_plnt_excpt IS INITIAL.
-      SELECT SINGLE matnr mtart meins FROM mara
-             INTO (l_matnr, l_mtart, l_meins)
-             WHERE bismt = h_matnr.
+    " y0pp_rem_active is pre-fetched in the main function
+    IF y0pp_rem_active IS NOT INITIAL AND y0pp_rem_active-datum LE it_gr-postdate AND h_plnt_excpt IS INITIAL.
+      DATA(ls_mara_srv_local) = VALUE #( gt_mara_buf[ KEY bismt bismt = h_matnr ] OPTIONAL ).
+      l_matnr = ls_mara_srv_local-matnr.
+      l_mtart = ls_mara_srv_local-mtart.
+      l_meins = ls_mara_srv_local-meins.
 
-      IF sy-subrc IS INITIAL.
+      IF l_matnr IS NOT INITIAL.
         CLEAR: it_gi,
                h_menge,
                h_bmein,
@@ -1440,7 +1444,6 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
       ELSE.
         IF l_mtart = 'FERT'.
           repbf_code = 4.
-          repbf_code = 4.
           PERFORM insert_status USING co_idoc_status_error
                                       'E' 'M3' '304' it_wa-materialnr
                                       space space space.
@@ -1449,10 +1452,11 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
 
     ELSE.
 *     Old part
-      SELECT * FROM y0pp_rem_service WHERE hmatn = h_matnr
-                                       AND werks = it_gr-prodplant.
+      DATA(lt_rem_service_filtered_local) = FILTER #( gt_rem_service_buf USING KEY hmatn_werks
+                                                       WHERE hmatn = h_matnr
+                                                         AND werks = it_gr-prodplant ).
 
-        IF sy-subrc = 0.
+      LOOP AT lt_rem_service_filtered_local INTO DATA(ls_rem_service_buf_local).
           CLEAR: it_gi,
                  h_menge,
                  h_bmein,
@@ -1462,10 +1466,10 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
           it_gi-y0_postype    = 'WA'.
 *{   REPLACE        R9SK901046                                        3
 *\          it_gi-materialnr    = y0pp_rem_service-smatn.
-          it_gi-materialnr    = y0_ca_converter=>matnr_to_matnr18( y0pp_rem_service-smatn ).
+          it_gi-materialnr    = y0_ca_converter=>matnr_to_matnr18( ls_rem_service_buf_local-smatn ).
 *}   REPLACE
 *{   INSERT         R9SK901046                                        4
-          it_gi-material_long = y0pp_rem_service-smatn.
+          it_gi-material_long = ls_rem_service_buf_local-smatn.
 *}   INSERT
           it_gi-prodplant     = it_gr-prodplant.
           it_gi-storageloc    = it_gr-storageloc.
@@ -1475,12 +1479,11 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
           it_gi-y0_hmat       = it_gr-materialnr.
           it_gi-y0_hcharg     = it_gr-batch.
 *        check unit of measures for conversion
-          IF it_gr-unitofmeasure NE y0pp_rem_service-meins.
+          IF it_gr-unitofmeasure NE ls_rem_service_buf_local-meins.
 *         if it_gr-unitofmeasure ne l_meins.
 *           get base unit of header material
-            SELECT SINGLE meins FROM mara INTO h_bmein
-                              WHERE matnr = h_matnr.
-            IF sy-subrc NE 0.
+            h_bmein = VALUE #( gt_mara_buf[ matnr = h_matnr ]-meins OPTIONAL ).
+            IF h_bmein IS INITIAL.
               repbf_code = 4.
               PERFORM insert_status USING co_idoc_status_error
                                           'E' 'M3' '305' h_matnr
@@ -1497,11 +1500,11 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
                 EXIT.
               ENDIF.
             ENDIF.
-            IF h_bmein NE y0pp_rem_service-meins.
+            IF h_bmein NE ls_rem_service_buf_local-meins.
 *              call conve  rsion Base-UNIT -> Unit in customizing table
               PERFORM cf_material_unit_conversion
                       USING h_menge space h_matnr h_bmein
-                            y0pp_rem_service-meins rcode.
+                            ls_rem_service_buf_local-meins rcode.
               IF rcode NE 0.
                 repbf_code = 4.
                 EXIT.
@@ -1509,9 +1512,9 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
             ENDIF.
           ENDIF.
 *        Multiply quantity with factor
-          h_menge = h_menge * y0pp_rem_service-faktr.
+          h_menge = h_menge * ls_rem_service_buf_local-faktr.
 *        check if negative posting required
-          IF y0pp_rem_service-repbf_neg = 'X'.
+          IF ls_rem_service_buf_local-repbf_neg = 'X'.
             h_menge = h_menge * -1.
           ENDIF.
 *        invert sign in case of reversal
@@ -1521,12 +1524,12 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
           it_gi-backflquant = h_menge.
 *        set unit of measure
 *         it_gi-unitofmeasure = l_meins.
-          SELECT SINGLE meins FROM mara INTO it_gi-unitofmeasure
+          it_gi-unitofmeasure = VALUE #( gt_mara_buf[ matnr = it_gi-material_long ]-meins OPTIONAL ).
 *{   REPLACE        R9SK901046                                        5
 *\                             WHERE matnr = it_gi-materialnr.
-                             WHERE matnr = it_gi-material_long.
+                             " WHERE matnr = it_gi-material_long. Lookup from buffer
 *}   REPLACE
-          IF sy-subrc NE 0.
+          IF it_gi-unitofmeasure IS INITIAL.
             repbf_code = 4.
             PERFORM insert_status USING co_idoc_status_error
 *{   REPLACE        R9SK901046                                        6
@@ -1538,8 +1541,7 @@ FORM zarepbf_add_service_materials TABLES it_gr STRUCTURE it_zarmmts
           ENDIF.
 *        add to components table
           APPEND it_gi.
-        ENDIF.
-      ENDSELECT.
+      ENDLOOP.
     ENDIF.
     IF repbf_code NE 0.
       EXIT.
@@ -2574,15 +2576,8 @@ FORM zarepbf_cls_post .
   LOOP AT lt_atnam.
 *{   REPLACE        R9SK901046                                        1
 *\    CALL FUNCTION 'BAPI_CHARACT_GETDETAIL'
-    CALL FUNCTION 'BAPI_CHARACT_GETDETAIL'                            "#EC CI_USAGE_OK[2438131]
+    lt_atnam-atbew = VALUE #( gt_char_detail_buf[ atnam = lt_atnam-atnam ]-atbew OPTIONAL ).
 *}   REPLACE
-      EXPORTING
-        charactname   = lt_atnam-atnam
-      IMPORTING
-        charactdetail = lk_chardt
-      TABLES
-        return        = lt_return.
-    lt_atnam-atbew = lk_chardt-value_assignment.
     MODIFY lt_atnam.
   ENDLOOP.
 
@@ -2777,7 +2772,8 @@ ENDFORM.
 FORM handle_bapi_return USING is_return TYPE bapiret2
                               iv_type   TYPE char2
                               iv_matnr  TYPE matnr
-                              iv_charg  TYPE charg_d.
+                              iv_v2     TYPE any
+                              iv_v3     TYPE any.
 
   IF is_return-type CA 'EA'. "Error or Abort
     idoc_status-status = co_idoc_status_error.
@@ -2799,8 +2795,9 @@ FORM handle_bapi_return USING is_return TYPE bapiret2
     PERFORM insert_status USING idoc_status-status
                                 'I' co_msgid lv_msgno
                                 iv_matnr
-                                iv_charg
-                                space space.
+                                iv_v2
+                                iv_v3
+                                space.
 
     PERFORM insert_status USING idoc_status-status
                                 is_return-type
@@ -2825,9 +2822,9 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Form map_header_text_bapi
 *&---------------------------------------------------------------------*
-FORM map_header_text_bapi USING us_zarmmts TYPE it_zarmmts
+FORM map_header_text_bapi USING us_zarmmts TYPE zarmmts
                                 us_type    TYPE char2
-                          CHANGING cv_bktxt TYPE bapi_conf_key-m_doc.
+                          CHANGING cv_bktxt TYPE bapi_rm_datgen-header_txt.
 
   DATA: h_bktxt TYPE rm61b-bktxt.
 
@@ -2882,9 +2879,9 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Form map_prod_version_bapi
 *&---------------------------------------------------------------------*
-FORM map_prod_version_bapi USING us_zarmmts TYPE it_zarmmts
+FORM map_prod_version_bapi USING us_zarmmts TYPE zarmmts
                            CHANGING cv_verid TYPE verid
-                                    cv_plnum TYPE plnum.
+                                    cv_plnum TYPE bapi_rm_datgen-planned_or.
 
   IF line_exists( gt_plaf_buf[ plnum = us_zarmmts-planorder ] ).
     cv_plnum = us_zarmmts-planorder.
@@ -2937,7 +2934,7 @@ FORM zarepbf_add_filling_plant .
         APPEND INITIAL LINE TO it_zarmcls ASSIGNING FIELD-SYMBOL(<fs_zarmcls>).
         MOVE-CORRESPONDING it_zarmcls[ 1 ] TO <fs_zarmcls>.
         <fs_zarmcls>-id = 'Y0_FILLING_PLANT'.
-        <fs_zarmcls>-value = ls_fill_p-werks_fill.
+        <fs_zarmcls>-value = ls_fill_p_local-werks_fill.
       ENDIF.
 
     ENDIF.
