@@ -1,6 +1,79 @@
 *----------------------------------------------------------------------*
 ***INCLUDE LY0_PP_FM_IDOC_INBOUNDF01 .
 *----------------------------------------------------------------------*
+DATA: BEGIN OF ty_mara_buf,
+        matnr TYPE matnr,
+        mtart TYPE mtart,
+        meins TYPE meins,
+        xchpf TYPE xchpf,
+        bismt TYPE bismt,
+      END OF ty_mara_buf.
+DATA: gt_mara_buf HASHED TABLE OF ty_mara_buf WITH UNIQUE KEY matnr
+                                              WITH NON-UNIQUE SORTED KEY bismt COMPONENTS bismt.
+
+DATA: BEGIN OF ty_mkal_buf,
+        matnr TYPE matnr,
+        werks TYPE werks_d,
+        verid TYPE verid,
+        adatu TYPE adatu,
+      END OF ty_mkal_buf.
+DATA: gt_mkal_buf SORTED TABLE OF ty_mkal_buf WITH NON-UNIQUE KEY matnr werks
+                                              WITH NON-UNIQUE KEY matnr_werks COMPONENTS matnr werks.
+
+DATA: BEGIN OF ty_mch1_buf,
+        matnr TYPE matnr,
+        werks TYPE werks_d,
+        charg TYPE charg_d,
+      END OF ty_mch1_buf.
+DATA: gt_mch1_buf HASHED TABLE OF ty_mch1_buf WITH UNIQUE KEY matnr werks charg.
+
+DATA: BEGIN OF ty_plaf_buf,
+        plnum TYPE plnum,
+        pwwrk TYPE werks_d,
+      END OF ty_plaf_buf.
+DATA: gt_plaf_buf HASHED TABLE OF ty_plaf_buf WITH UNIQUE KEY plnum.
+
+DATA: gt_rbfqty_buf TYPE HASHED TABLE OF y0pp_calc_rbfqty WITH UNIQUE KEY matnr pstyp.
+DATA: gt_svpo_buf TYPE HASHED TABLE OF y0mm_svpo_fixval WITH UNIQUE KEY matnr werks ponum.
+DATA: gt_fill_plant_buf TYPE HASHED TABLE OF y0pp_fill_plant WITH UNIQUE KEY werks_prod.
+DATA: gt_rem_srvplnt_buf TYPE HASHED TABLE OF y0pp_rem_srvplnt WITH UNIQUE KEY werks.
+DATA: gt_zatpde_send_buf TYPE HASHED TABLE OF y0pp_zatpde_send WITH UNIQUE KEY plnum.
+DATA: gt_rem_service_buf TYPE SORTED TABLE OF y0pp_rem_service WITH NON-UNIQUE KEY hmatn werks.
+DATA: gt_zatpde_calc_buf TYPE HASHED TABLE OF y0pp_zatpde_calc WITH UNIQUE KEY sender plorder display component.
+
+DATA: BEGIN OF ty_mseg_buf,
+        matnr TYPE matnr,
+        werks TYPE werks_d,
+        charg TYPE charg_d,
+        aufnr TYPE aufnr,
+      END OF ty_mseg_buf.
+DATA: gt_mseg_buf HASHED TABLE OF ty_mseg_buf WITH UNIQUE KEY matnr werks charg.
+
+DATA: BEGIN OF ty_ckmlmv013_buf,
+        aufnr TYPE aufnr,
+        verid TYPE verid,
+      END OF ty_ckmlmv013_buf.
+DATA: gt_ckmlmv013_buf HASHED TABLE OF ty_ckmlmv013_buf WITH UNIQUE KEY aufnr.
+
+DATA: BEGIN OF ty_cabn_buf,
+        atinn TYPE atinn,
+        atnam TYPE atnam,
+        anzst TYPE anzst,
+        atfor TYPE atfor,
+      END OF ty_cabn_buf.
+DATA: gt_cabn_buf HASHED TABLE OF ty_cabn_buf WITH UNIQUE KEY atnam.
+
+DATA: BEGIN OF ty_class_chars_buf,
+        atnam TYPE atnam,
+      END OF ty_class_chars_buf.
+DATA: gt_class_chars_buf HASHED TABLE OF ty_class_chars_buf WITH UNIQUE KEY atnam.
+
+DATA: BEGIN OF ty_char_detail_buf,
+        atnam TYPE atnam,
+        atbew TYPE atbew,
+      END OF ty_char_detail_buf.
+DATA: gt_char_detail_buf HASHED TABLE OF ty_char_detail_buf WITH UNIQUE KEY atnam.
+
 *&---------------------------------------------------------------------*
 *&      Form  ZAREPBF_IDOC_PARSE
 *&---------------------------------------------------------------------*
@@ -11,6 +84,157 @@ FORM zarepbf_idoc_parse.
 
   DATA: h_menge   TYPE sa_erfmg,
         lv_dd_map TYPE abap_bool.
+
+  TYPES: BEGIN OF ty_rem_srvplnt_buf_local,
+           werks TYPE werks_d,
+         END OF ty_rem_srvplnt_buf_local.
+
+  DATA: lt_matnr_keys TYPE STANDARD TABLE OF ty_mara_buf WITH EMPTY KEY,
+        lt_mkal_keys  TYPE STANDARD TABLE OF ty_mkal_buf WITH EMPTY KEY,
+        lt_mch1_keys  TYPE STANDARD TABLE OF ty_mch1_buf WITH EMPTY KEY,
+        lt_plaf_keys  TYPE STANDARD TABLE OF ty_plaf_buf WITH EMPTY KEY,
+        lt_rbfqty_keys TYPE STANDARD TABLE OF ty_mara_buf WITH EMPTY KEY,
+        lt_werks_keys TYPE STANDARD TABLE OF ty_rem_srvplnt_buf_local WITH EMPTY KEY,
+        lt_rem_service_keys TYPE STANDARD TABLE OF ty_rem_service_buf WITH EMPTY KEY,
+        lt_char_keys TYPE STANDARD TABLE OF ty_cabn_buf WITH EMPTY KEY.
+
+  " Collect all keys for pre-fetching
+  LOOP AT idoc_data.
+    CASE idoc_data-segnam.
+      WHEN co_zarmmts.
+        DATA(ls_seg_zarmmts) = CONV zarmmts( idoc_data-sdata ).
+        DATA(lv_matnr_long) = y0_ca_converter=>matnr18_to_matnr( ls_seg_zarmmts-materialnr ).
+        DATA(lv_hmat_long) = y0_ca_converter=>matnr18_to_matnr( ls_seg_zarmmts-y0_hmat ).
+
+        APPEND VALUE #( matnr = lv_matnr_long ) TO lt_matnr_keys.
+        APPEND VALUE #( matnr = lv_hmat_long ) TO lt_matnr_keys.
+        APPEND VALUE #( matnr = lv_matnr_long ) TO lt_rbfqty_keys.
+        APPEND VALUE #( matnr = lv_matnr_long werks = ls_seg_zarmmts-prodplant ) TO lt_mkal_keys.
+        APPEND VALUE #( matnr = lv_hmat_long werks = ls_seg_zarmmts-prodplant ) TO lt_mkal_keys.
+        APPEND VALUE #( matnr = lv_hmat_long werks = ls_seg_zarmmts-prodplant charg = ls_seg_zarmmts-y0_hcharg ) TO lt_mch1_keys.
+        APPEND VALUE #( matnr = lv_matnr_long werks = ls_seg_zarmmts-prodplant charg = ls_seg_zarmmts-batch ) TO lt_mch1_keys.
+        APPEND VALUE #( matnr = lv_hmat_long werks = ls_seg_zarmmts-prodplant charg = ls_seg_zarmmts-planorder+2 ) TO lt_mch1_keys. "For mseg lookup
+        APPEND VALUE #( plnum = ls_seg_zarmmts-planorder ) TO lt_plaf_keys.
+        APPEND VALUE #( werks = ls_seg_zarmmts-prodplant ) TO lt_werks_keys.
+        APPEND VALUE #( hmatn = lv_matnr_long werks = ls_seg_zarmmts-prodplant ) TO lt_rem_service_keys.
+
+      WHEN co_zarmcls.
+        DATA(ls_seg_zarmcls) = CONV zarmcls( idoc_data-sdata ).
+        APPEND VALUE #( atnam = ls_seg_zarmcls-id ) TO lt_char_keys.
+    ENDCASE.
+  ENDLOOP.
+
+  " Perform bulk SELECTs
+  IF lt_matnr_keys IS NOT INITIAL.
+    SORT lt_matnr_keys BY matnr.
+    DELETE ADJACENT DUPLICATES FROM lt_matnr_keys COMPARING matnr.
+    SELECT matnr, mtart, meins, xchpf, bismt FROM mara INTO TABLE @gt_mara_buf
+      FOR ALL ENTRIES IN @lt_matnr_keys WHERE matnr = @lt_matnr_keys-matnr.
+
+    " Pre-fetch all materials linked by BISMT for service material logic
+    IF gt_mara_buf IS NOT INITIAL.
+      SELECT matnr, mtart, meins, xchpf, bismt FROM mara APPENDING TABLE @gt_mara_buf
+        FOR ALL ENTRIES IN @gt_mara_buf WHERE bismt = @gt_mara_buf-matnr.
+      SORT gt_mara_buf BY matnr.
+      DELETE ADJACENT DUPLICATES FROM gt_mara_buf COMPARING matnr.
+    ENDIF.
+  ENDIF.
+
+  IF lt_mkal_keys IS NOT INITIAL.
+    SORT lt_mkal_keys BY matnr werks.
+    DELETE ADJACENT DUPLICATES FROM lt_mkal_keys COMPARING matnr werks.
+    SELECT matnr, werks, verid, adatu FROM mkal INTO TABLE @gt_mkal_buf
+      FOR ALL ENTRIES IN @lt_mkal_keys WHERE matnr = @lt_mkal_keys-matnr AND werks = @lt_mkal_keys-werks.
+  ENDIF.
+
+  IF lt_mch1_keys IS NOT INITIAL.
+    SORT lt_mch1_keys BY matnr werks charg.
+    DELETE ADJACENT DUPLICATES FROM lt_mch1_keys COMPARING matnr werks charg.
+    SELECT matnr, werks, charg FROM mch1 INTO TABLE @gt_mch1_buf
+      FOR ALL ENTRIES IN @lt_mch1_keys WHERE matnr = @lt_mch1_keys-matnr AND werks = @lt_mch1_keys-werks AND charg = @lt_mch1_keys-charg.
+    SELECT matnr, werks, charg, aufnr FROM mseg INTO TABLE @gt_mseg_buf
+      FOR ALL ENTRIES IN @lt_mch1_keys
+      WHERE matnr = @lt_mch1_keys-matnr AND werks = @lt_mch1_keys-werks AND charg = @lt_mch1_keys-charg AND bwart = '131'.
+    IF gt_mseg_buf IS NOT INITIAL.
+      SELECT aufnr, verid FROM ckmlmv013 INTO TABLE @gt_ckmlmv013_buf
+        FOR ALL ENTRIES IN @gt_mseg_buf WHERE aufnr = @gt_mseg_buf-aufnr.
+    ENDIF.
+  ENDIF.
+
+  IF lt_plaf_keys IS NOT INITIAL.
+    SORT lt_plaf_keys BY plnum.
+    DELETE ADJACENT DUPLICATES FROM lt_plaf_keys COMPARING plnum.
+    SELECT plnum, pwwrk FROM plaf INTO TABLE @gt_plaf_buf
+      FOR ALL ENTRIES IN @lt_plaf_keys WHERE plnum = @lt_plaf_keys-plnum.
+    SELECT plnum, matnr FROM y0pp_zatpde_send INTO TABLE @gt_zatpde_send_buf
+      FOR ALL ENTRIES IN @lt_plaf_keys WHERE plnum = @lt_plaf_keys-plnum.
+    SELECT * FROM y0pp_zatpde_calc INTO TABLE @gt_zatpde_calc_buf
+      FOR ALL ENTRIES IN @lt_plaf_keys WHERE sender = @idoc_contrl-sndprn AND plorder = @lt_plaf_keys-plnum.
+  ENDIF.
+
+  IF lt_rbfqty_keys IS NOT INITIAL.
+    SELECT * FROM y0pp_calc_rbfqty INTO TABLE @gt_rbfqty_buf
+      FOR ALL ENTRIES IN @lt_rbfqty_keys WHERE matnr = @lt_rbfqty_keys-matnr.
+  ENDIF.
+
+  IF lt_werks_keys IS NOT INITIAL.
+    SORT lt_werks_keys BY werks.
+    DELETE ADJACENT DUPLICATES FROM lt_werks_keys COMPARING werks.
+    SELECT * FROM y0mm_svpo_fixval INTO TABLE @gt_svpo_buf
+      FOR ALL ENTRIES IN @lt_werks_keys WHERE werks = @lt_werks_keys-werks.
+    SELECT * FROM y0pp_fill_plant INTO TABLE @gt_fill_plant_buf
+      FOR ALL ENTRIES IN @lt_werks_keys WHERE werks_prod = @lt_werks_keys-werks.
+    SELECT * FROM y0pp_rem_srvplnt INTO TABLE @gt_rem_srvplnt_buf
+      FOR ALL ENTRIES IN @lt_werks_keys WHERE werks = @lt_werks_keys-werks.
+  ENDIF.
+
+  IF lt_rem_service_keys IS NOT INITIAL.
+    SORT lt_rem_service_keys BY hmatn werks.
+    DELETE ADJACENT DUPLICATES FROM lt_rem_service_keys COMPARING hmatn werks.
+    SELECT * FROM y0pp_rem_service INTO TABLE @gt_rem_service_buf
+      FOR ALL ENTRIES IN @lt_rem_service_keys WHERE hmatn = @lt_rem_service_keys-hmatn AND werks = @lt_rem_service_keys-werks.
+  ENDIF.
+
+  " Session-constant selects
+  SELECT SINGLE * FROM y0mm_gm_matnrcnv INTO @y0mm_gm_matnrcnv
+    WHERE sndprn = @idoc_contrl-sndprn.
+
+  " Pre-fetch CABN data
+  IF lt_char_keys IS NOT INITIAL.
+    SORT lt_char_keys BY atnam.
+    DELETE ADJACENT DUPLICATES FROM lt_char_keys COMPARING atnam.
+    SELECT atinn, atnam, anzst, atfor FROM cabn INTO TABLE @gt_cabn_buf
+      FOR ALL ENTRIES IN @lt_char_keys WHERE atnam = @lt_char_keys-atnam AND anzst = 18 AND atfor = 'CHAR'.
+  ENDIF.
+
+  " Pre-fetch Class Characteristics and Details
+  IF lt_char_keys IS NOT INITIAL.
+    DATA: lt_char_temp TYPE STANDARD TABLE OF bapi_char,
+          lt_vals_temp TYPE STANDARD TABLE OF bapi_char_values.
+    CALL FUNCTION 'BAPI_CLASS_GET_CHARACTERISTICS'
+      EXPORTING
+        classnum        = 'Y0_FINISHED_GOODS'
+        classtype       = '023'
+      TABLES
+        characteristics = lt_char_temp
+        char_values     = lt_vals_temp.
+
+    LOOP AT lt_char_temp INTO DATA(ls_char_temp).
+      INSERT VALUE #( atnam = ls_char_temp-name_char ) INTO TABLE gt_class_chars_buf.
+    ENDLOOP.
+
+    LOOP AT lt_char_keys INTO DATA(ls_char_key).
+      IF line_exists( gt_class_chars_buf[ atnam = ls_char_key-atnam ] ).
+        DATA: ls_chardt_temp TYPE bapicharactdetail.
+        CALL FUNCTION 'BAPI_CHARACT_GETDETAIL'
+          EXPORTING
+            charactname   = ls_char_key-atnam
+          IMPORTING
+            charactdetail = ls_chardt_temp.
+        INSERT VALUE #( atnam = ls_char_key-atnam atbew = ls_chardt_temp-value_assignment ) INTO TABLE gt_char_detail_buf.
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
 
   " Check if plant/DD mapping is necessary
   " If yes -> Map plant& material
@@ -113,9 +337,8 @@ FORM zarepbf_idoc_parse.
       IF it_zarmmts-y0_postype EQ co_postype_wa AND it_zarmmts-y0_hmat IS INITIAL.
 *{   REPLACE        R9SK901046                                        6
 *\        SELECT SINGLE matnr INTO it_zarmmts-y0_hmat FROM y0pp_zatpde_send
-        SELECT SINGLE matnr INTO it_zarmmts-y0_hmat_long FROM y0pp_zatpde_send
+        it_zarmmts-y0_hmat_long = VALUE #( gt_zatpde_send_buf[ plnum = it_zarmmts-planorder ]-matnr OPTIONAL ).
 *}   REPLACE
-          WHERE plnum = it_zarmmts-planorder.
 *{   INSERT         R9SK901046                                        7
         it_zarmmts-y0_hmat = y0_ca_converter=>matnr_to_matnr18( it_zarmmts-y0_hmat_long ).
 *}   INSERT
@@ -127,9 +350,8 @@ FORM zarepbf_idoc_parse.
                                     'it_zarmmts-y0_hmat'
                                     '' '' ''.
       ENDIF.
-      SELECT SINGLE * FROM y0mm_gm_matnrcnv
-                     WHERE sndprn = idoc_contrl-sndprn.
-      IF sy-subrc = 0.
+      " SELECT SINGLE * FROM y0mm_gm_matnrcnv moved to pre-fetch logic
+      IF y0mm_gm_matnrcnv IS NOT INITIAL.
 *         Convert component material number
         CALL FUNCTION 'Y_0CA_PARTNER_CONVERT_MATNR'
           EXPORTING
@@ -166,28 +388,22 @@ FORM zarepbf_idoc_parse.
 
 *      determine if field batch should be deleted
       CLEAR: mara-mtart, mara-meins, mara-xchpf.
-      SELECT SINGLE mtart meins xchpf FROM mara
-                                      INTO (mara-mtart, mara-meins, mara-xchpf)
-*{   REPLACE        R9SK901046                                        4
-*\                                     WHERE matnr = it_zarmmts-materialnr.
-                                     WHERE matnr = it_zarmmts-material_long.
-*}   REPLACE
+      DATA(ls_mara_buf_local) = VALUE #( gt_mara_buf[ matnr = it_zarmmts-material_long ] OPTIONAL ).
+      mara-mtart = ls_mara_buf_local-mtart.
+      mara-meins = ls_mara_buf_local-meins.
+      mara-xchpf = ls_mara_buf_local-xchpf.
       IF mara-xchpf IS INITIAL.
         CLEAR it_zarmmts-batch.
       ENDIF.
 
 *      Re-Calculate quantity
-      SELECT SINGLE * FROM y0pp_calc_rbfqty
-*{   REPLACE        R9SK901046                                        5
-*\                     WHERE matnr = it_zarmmts-materialnr
-                     WHERE matnr = it_zarmmts-material_long
-*}   REPLACE
-                       AND pstyp = it_zarmmts-y0_postype.
-      IF sy-subrc = 0.
+      DATA(ls_rbfqty_buf_local) = VALUE #( gt_rbfqty_buf[ matnr = it_zarmmts-material_long
+                                                          pstyp = it_zarmmts-y0_postype ] OPTIONAL ).
+      IF ls_rbfqty_buf_local IS NOT INITIAL.
         CLEAR h_menge.
         TRANSLATE it_zarmmts-backflquant USING ',.'.
         h_menge = it_zarmmts-backflquant.
-        h_menge = h_menge * y0pp_calc_rbfqty-faktr.
+        h_menge = h_menge * ls_rbfqty_buf_local-faktr.
         it_zarmmts-backflquant = h_menge.
       ENDIF.
 
@@ -238,9 +454,9 @@ FORM zarepbf_idoc_parse.
         CHECK repbf_code = 0.
         IF wa_zarmcls-id  NE 'Y0_PD_RECIPE'.
           "check if value even can be a material number
-          SELECT SINGLE COUNT(*) FROM cabn WHERE atinn = wa_zarmcls-id
-                                             AND anzst = 18 AND atfor = 'CHAR'.
-          IF sy-subrc IS INITIAL.
+          " SELECT SINGLE COUNT(*) FROM cabn WHERE atinn = wa_zarmcls-id
+          "                                   AND anzst = 18 AND atfor = 'CHAR'.
+          IF line_exists( gt_cabn_buf[ atnam = wa_zarmcls-id ] ).
             "convert the value (old material number to RB material number)
             CALL FUNCTION 'Y_0CA_PARTNER_CONVERT_MATNR'
               EXPORTING
@@ -314,7 +530,23 @@ FORM zarepbf_init_data.
            it_we,
            it_wa,
            it_re,
-           it_ra.
+           it_ra,
+           gt_mara_buf,
+           gt_mkal_buf,
+           gt_mch1_buf,
+           gt_plaf_buf,
+           gt_rbfqty_buf,
+           gt_svpo_buf,
+           gt_fill_plant_buf,
+           gt_rem_srvplnt_buf,
+           gt_zatpde_send_buf,
+           gt_rem_service_buf,
+           gt_zatpde_calc_buf,
+           gt_mseg_buf,
+           gt_ckmlmv013_buf,
+           gt_cabn_buf,
+           gt_class_chars_buf,
+           gt_char_detail_buf.
 
   IF input_method IS INITIAL.
     bdc_mode = 'N'.
@@ -334,161 +566,149 @@ ENDFORM.                    " zarepbf_init_data
 *&---------------------------------------------------------------------*
 FORM zarepbf_post.
 *locals
-  DATA: lv_umrez       TYPE umrez,
-        lv_meins       TYPE meins,
-        lv_backflquant TYPE i.
+  DATA: lv_umrez        TYPE umrez,
+        lv_meins        TYPE meins,
+        lv_backflquant  TYPE i,
+        ls_bapi_gen     TYPE bapirepmanconf1_datgen,
+        ls_bapi_ext     TYPE bapirepmanconf1_datext,
+        lt_bapi_item    TYPE TABLE OF bapirepmanconf1_item,
+        ls_bapi_return  TYPE bapiret2,
+        lv_conf_confirm TYPE bapi_conf_key-conf_confirm,
+        lv_conf_counter TYPE bapi_conf_key-conf_counter,
+        lv_m_doc        TYPE bapi_conf_key-m_doc,
+        lv_m_year       TYPE bapi_conf_key-m_year.
 
 * process reversals
   LOOP AT it_re.
-*   clear data
-    PERFORM bdcdata_wipe.
-    PERFORM bdcmsg_wipe.
-*
-    TRANSLATE it_re-backflquant USING ',.'.
-    PERFORM translate_quan_for_gui USING it_re-backflquant.
-*   build bdcdata
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800',
-                              ' ' 'BDC_OKCODE' '=RBTYP',
-                              ' ' 'RM61B-RB_BAUGR' 'X',
-                              'X' 'SAPLBARM' '0800',
-                              ' ' 'BDC_OKCODE' '=REVR'.
-    PERFORM fill_first_mfbf_screen TABLES it_ra USING it_re 'WE'.
-*   Task 11-59036: process posting to inspection stock
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800',
-                              ' ' 'BDC_OKCODE' '=PARA'.
+    CLEAR: ls_bapi_gen, ls_bapi_ext, lt_bapi_item, ls_bapi_return, lv_conf_confirm, lv_conf_counter, lv_m_doc, lv_m_year.
+    ADD 1 TO trans_called.
 
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0150',
-                              ' ' 'BDC_OKCODE' '=GOON'.
+    ls_bapi_gen-material      = it_re-materialnr.
+    ls_bapi_gen-plant         = it_re-prodplant.
+    DATA(lv_qty_in) = it_re-backflquant.
+    TRANSLATE lv_qty_in USING ',.'.
+    ls_bapi_gen-backflush_qty = abs( CONV erfmg( lv_qty_in ) ).
+    ls_bapi_gen-unitofmeasure = it_re-unitofmeasure.
+    ls_bapi_gen-post_date     = it_re-postdate.
+    ls_bapi_gen-doc_date      = it_re-docdate.
+    ls_bapi_gen-batch         = it_re-batch.
+    ls_bapi_gen-storage_loc   = it_re-storageloc.
+
     CASE it_re-insmk.
-      WHEN ' ' OR 'F'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' 'X',
-                                  ' ' 'RM61B-RADIOQU' ' ',
-                                  ' ' 'RM61B-RADIOSP' ' '.
-      WHEN 'X' OR '2'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' ' ',
-                                  ' ' 'RM61B-RADIOQU' 'X',
-                                  ' ' 'RM61B-RADIOSP' ' '.
-      WHEN 'S'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' ' ',
-                                  ' ' 'RM61B-RADIOQU' ' ',
-                                  ' ' 'RM61B-RADIOSP' 'X'.
+      WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
+      WHEN 'X' OR '2'. ls_bapi_gen-stock_type = 'X'.
+      WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800'.
 
-*   look if service materials exist to current reversal
-    READ TABLE it_ra WITH KEY y0_hmat   = it_re-materialnr
-                              y0_hcharg = it_re-batch.
-*   Post with correction
-    IF sy-subrc = 0.
-      PERFORM mfbf_post_corrections TABLES it_ra
-                                    USING  it_re-materialnr
-                                           it_re-batch.
-      PERFORM call_transaction USING co_backflush_tcode bdc_mode 'S'.
-      ADD 1 TO trans_called.
-      PERFORM check_msg USING co_wewa_msg-msgtyp co_wewa_msg-msgid
-                              co_wewa_msg-msgnr
-                              'I' co_msgid '020' it_re-materialnr
-                              it_re-batch space space.
-      PERFORM create_link USING co_wewa_msg-msgtyp co_wewa_msg-msgid
-                                co_wewa_msg-msgnr
-                                idoc_contrl-docnum idoc_contrl-sndprn.
-*   Post without correction
-    ELSE.
-      PERFORM bdc_dynpro USING: ' ' 'BDC_OKCODE' '=POST'.
-      PERFORM call_transaction USING co_backflush_tcode bdc_mode 'S'.
-      ADD 1 TO trans_called.
-      PERFORM check_msg USING co_we_msg-msgtyp co_we_msg-msgid
-                              co_we_msg-msgnr
-                              'I' co_msgid '020' it_re-materialnr
-                              it_re-batch space space.
-      PERFORM create_link USING co_we_msg-msgtyp co_we_msg-msgid
-                                co_we_msg-msgnr
-                                idoc_contrl-docnum idoc_contrl-sndprn.
-    ENDIF.
+    ls_bapi_ext-production_date = it_re-y0_proddate.
+    ls_bapi_ext-expiry_date     = it_re-y0_seldate.
+    ls_bapi_ext-backflush_type  = '1'. "Assembly backflush
+
+    PERFORM map_header_text_bapi USING it_re 'WE' CHANGING ls_bapi_gen-header_txt.
+    PERFORM map_prod_version_bapi USING it_re CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
+
+    " Component corrections
+    LOOP AT it_ra WHERE y0_hmat = it_re-materialnr AND y0_hcharg = it_re-batch.
+      DATA(lv_ra_qty) = it_ra-backflquant.
+      TRANSLATE lv_ra_qty USING ',.'.
+      APPEND VALUE #( material = it_ra-materialnr
+                      plant    = it_ra-prodplant
+                      entry_qnt = abs( CONV erfmg( lv_ra_qty ) )
+                      entry_uom = it_ra-unitofmeasure
+                      stge_loc  = it_ra-storageloc
+                      batch     = it_ra-batch ) TO lt_bapi_item.
+      DELETE it_ra.
+    ENDLOOP.
+
+    CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
+      EXPORTING
+        backflushdatagen = ls_bapi_gen
+        backflushdatext  = ls_bapi_ext
+        reversal         = abap_true
+      IMPORTING
+        return           = ls_bapi_return
+        confirmation     = lv_conf_confirm
+        confcounter      = lv_conf_counter
+        mat_doc          = lv_m_doc
+        doc_year         = lv_m_year
+      TABLES
+        itemdata         = lt_bapi_item.
+
+    PERFORM handle_bapi_return USING ls_bapi_return 'RE' it_re-materialnr it_re-batch.
   ENDLOOP.
 
 * Process WE
   LOOP AT it_we.
-*   clear data
-    PERFORM bdcdata_wipe.
-    PERFORM bdcmsg_wipe.
-*
-    TRANSLATE it_we-backflquant USING ',.'.
-    PERFORM translate_quan_for_gui USING it_we-backflquant.
-*   build bdcdata
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800',
-                              ' ' 'BDC_OKCODE' '=RBTYP',
-                              ' ' 'RM61B-RB_BAUGR' 'X'.
-    PERFORM fill_first_mfbf_screen TABLES it_wa USING it_we 'WE'.
-*   Task 11-59036: process posting to inspection stock
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800',
-                              ' ' 'BDC_OKCODE' '=PARA'.
+    CLEAR: ls_bapi_gen, ls_bapi_ext, lt_bapi_item, ls_bapi_return, lv_conf_confirm, lv_conf_counter, lv_m_doc, lv_m_year.
+    ADD 1 TO trans_called.
 
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0150',
-                              ' ' 'BDC_OKCODE' '=GOON'.
+    ls_bapi_gen-material      = it_we-materialnr.
+    ls_bapi_gen-plant         = it_we-prodplant.
+    DATA(lv_we_qty) = it_we-backflquant.
+    TRANSLATE lv_we_qty USING ',.'.
+    ls_bapi_gen-backflush_qty = abs( CONV erfmg( lv_we_qty ) ).
+    ls_bapi_gen-unitofmeasure = it_we-unitofmeasure.
+    ls_bapi_gen-post_date     = it_we-postdate.
+    ls_bapi_gen-doc_date      = it_we-docdate.
+    ls_bapi_gen-batch         = it_we-batch.
+    ls_bapi_gen-storage_loc   = it_we-storageloc.
+
     CASE it_we-insmk.
-      WHEN ' ' OR 'F'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' 'X',
-                                  ' ' 'RM61B-RADIOQU' ' ',
-                                  ' ' 'RM61B-RADIOSP' ' '.
-      WHEN 'X' OR '2'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' ' ',
-                                  ' ' 'RM61B-RADIOQU' 'X',
-                                  ' ' 'RM61B-RADIOSP' ' '.
-      WHEN 'S'.
-        PERFORM bdc_dynpro USING: ' ' 'RM61B-RADIOFR' ' ',
-                                  ' ' 'RM61B-RADIOQU' ' ',
-                                  ' ' 'RM61B-RADIOSP' 'X'.
+      WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
+      WHEN 'X' OR '2'. ls_bapi_gen-stock_type = 'X'.
+      WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
-    PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800'.
 
-*   look if WA's exist to current WE
-    READ TABLE it_wa WITH KEY y0_hmat   = it_we-materialnr
-                              y0_hcharg = it_we-batch.
-*   Post with correction
-    IF sy-subrc = 0.
-      PERFORM mfbf_post_corrections TABLES it_wa
-                                    USING  it_we-materialnr
-                                           it_we-batch.
-      PERFORM call_transaction USING co_backflush_tcode bdc_mode 'S'.
-      ADD 1 TO trans_called.
-      PERFORM check_msg USING co_wewa_msg-msgtyp co_wewa_msg-msgid
-                              co_wewa_msg-msgnr
-                              'I' co_msgid '020' it_we-materialnr
-                              it_we-batch space space.
-      PERFORM create_link USING co_wewa_msg-msgtyp co_wewa_msg-msgid
-                                co_wewa_msg-msgnr
-                                idoc_contrl-docnum idoc_contrl-sndprn.
-*   Post without correction
-    ELSE.
-      PERFORM bdc_dynpro USING: ' ' 'BDC_OKCODE' '=POST'.
-*   confirm popup for any zrepbf/desys*
-      IF idoc_contrl-mestyp = 'ZREPBF' AND idoc_contrl-sndprn+0(5) = 'DESYS'.
-        PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0171',
-                                  ' ' 'BDC_OKCODE' '=GOON'.
-      ENDIF.
-      PERFORM call_transaction USING co_backflush_tcode bdc_mode 'S'.
-      ADD 1 TO trans_called.
-      PERFORM check_msg USING co_we_msg-msgtyp co_we_msg-msgid
-                              co_we_msg-msgnr
-                              'I' co_msgid '020' it_we-materialnr
-                              it_we-batch space space.
-      PERFORM create_link USING co_we_msg-msgtyp co_we_msg-msgid
-                                co_we_msg-msgnr
-                                idoc_contrl-docnum idoc_contrl-sndprn.
-    ENDIF.
+    ls_bapi_ext-production_date = it_we-y0_proddate.
+    ls_bapi_ext-expiry_date     = it_we-y0_seldate.
+    ls_bapi_ext-backflush_type  = '1'. "Assembly backflush
+
+    PERFORM map_header_text_bapi USING it_we 'WE' CHANGING ls_bapi_gen-header_txt.
+    PERFORM map_prod_version_bapi USING it_we CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
+
+    " Component corrections
+    LOOP AT it_wa WHERE y0_hmat = it_we-materialnr AND y0_hcharg = it_we-batch.
+      DATA(lv_wa_qty) = it_wa-backflquant.
+      TRANSLATE lv_wa_qty USING ',.'.
+      APPEND VALUE #( material = it_wa-materialnr
+                      plant    = it_wa-prodplant
+                      entry_qnt = abs( CONV erfmg( lv_wa_qty ) )
+                      entry_uom = it_wa-unitofmeasure
+                      stge_loc  = it_wa-storageloc
+                      batch     = it_wa-batch ) TO lt_bapi_item.
+      DELETE it_wa.
+    ENDLOOP.
+
+    CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
+      EXPORTING
+        backflushdatagen = ls_bapi_gen
+        backflushdatext  = ls_bapi_ext
+      IMPORTING
+        return           = ls_bapi_return
+        confirmation     = lv_conf_confirm
+        confcounter      = lv_conf_counter
+        mat_doc          = lv_m_doc
+        doc_year         = lv_m_year
+      TABLES
+        itemdata         = lt_bapi_item.
+
+    PERFORM handle_bapi_return USING ls_bapi_return 'WE' it_we-materialnr it_we-batch.
   ENDLOOP.
 
 * if WA's are left (WA's without corresponding WE) process them
   LOOP AT it_wa.
+    CLEAR: ls_bapi_gen, ls_bapi_ext, lt_bapi_item, ls_bapi_return, lv_conf_confirm, lv_conf_counter, lv_m_doc, lv_m_year.
+    ADD 1 TO trans_called.
+
 * calculation tr1->can
     IF it_wa-unitofmeasure EQ 'TR1'.
-      SELECT SINGLE meins umrez INTO (lv_meins, lv_umrez) FROM y0pp_zatpde_calc
-        WHERE sender = idoc_contrl-sndprn
-          AND plorder = it_wa-planorder
-          AND display = it_wa-y0_hmat
-          AND component = it_wa-materialnr.
-      IF sy-subrc IS INITIAL.
+      DATA(ls_zatpde_calc_buf) = VALUE #( gt_zatpde_calc_buf[ sender = idoc_contrl-sndprn
+                                                             plorder = it_wa-planorder
+                                                             display = it_wa-y0_hmat
+                                                             component = it_wa-materialnr ] OPTIONAL ).
+      IF ls_zatpde_calc_buf IS NOT INITIAL.
+        lv_meins = ls_zatpde_calc_buf-meins.
+        lv_umrez = ls_zatpde_calc_buf-umrez.
         it_wa-unitofmeasure = lv_meins.
         TRANSLATE it_wa-backflquant USING ',.'.
         lv_backflquant = it_wa-backflquant * lv_umrez.
@@ -504,271 +724,47 @@ FORM zarepbf_post.
                                     lv_meins '' ''.
       ENDIF.
     ENDIF.
-*   clear data
-    PERFORM bdcdata_wipe.
-    PERFORM bdcmsg_wipe.
-*
-    TRANSLATE it_wa-backflquant USING ',.'.
-    PERFORM translate_quan_for_gui USING it_wa-backflquant.
-*   build bdcdata
-    PERFORM bdc_dynpro USING:
-         'X' 'SAPLBARM' '0800',
-         ' ' 'BDC_CURSOR' 'RM61B-RB_KOMPO',
-         ' ' 'BDC_OKCODE' '=RBTYP',
-         ' ' 'RM61B-RB_KOMPO' 'X'.
-    PERFORM fill_first_mfbf_screen TABLES it_wa USING it_wa 'WA'.  "table it_wa only dummy here to use same perform
-    PERFORM bdc_dynpro USING:
-         ' ' 'BDC_OKCODE' '=ISTDA',
-         'X' 'SAPLCOWB' '0130',
-         ' ' 'BDC_OKCODE' '/00',
-         ' ' 'COWB_COMP-MATNR(01)' it_wa-materialnr,
-         ' ' 'COWB_COMP-ERFMG_R(01)' it_wa-backflquant,
-         ' ' 'COWB_COMP-ERFME(01)' it_wa-unitofmeasure,
-         ' ' 'COWB_COMP-WERKS(01)' it_wa-prodplant,
-         ' ' 'COWB_COMP-LGORT(01)' it_wa-storageloc.
-    IF NOT it_wa-batch IS INITIAL.
-      PERFORM bdc_dynpro USING:
-           'X' 'SAPLCOWB' '0130',
-           ' ' 'BDC_OKCODE' '/00',
-           ' ' 'COWB_COMP-CHARG(01)' it_wa-batch.  "10-43753 for batch where used list
-    ENDIF.
-    PERFORM bdc_dynpro USING:
-         'X' 'SAPLCOWB' '0130',
-         ' ' 'BDC_OKCODE' '=WEIT'.
 
-*   add info message
-    PERFORM call_transaction USING co_backflush_tcode bdc_mode 'S'.
-    ADD 1 TO trans_called.
-    PERFORM check_msg USING co_wa_msg-msgtyp co_wa_msg-msgid
-                            co_wa_msg-msgnr
-                            'I' co_msgid '021' it_wa-materialnr
-                            it_wa-y0_hmat it_wa-y0_hcharg space.
-    PERFORM create_link USING co_wa_msg-msgtyp co_wa_msg-msgid
-                              co_wa_msg-msgnr
-                              idoc_contrl-docnum idoc_contrl-sndprn.
+    ls_bapi_gen-material      = it_wa-y0_hmat.
+    ls_bapi_gen-plant         = it_wa-prodplant.
+    DATA(lv_comp_qty) = it_wa-backflquant.
+    TRANSLATE lv_comp_qty USING ',.'.
+    ls_bapi_gen-backflush_qty = 0. "Component only
+    ls_bapi_gen-post_date     = it_wa-postdate.
+    ls_bapi_gen-doc_date      = it_wa-docdate.
+    ls_bapi_gen-batch         = it_wa-y0_hcharg.
+
+    ls_bapi_ext-production_date = it_wa-y0_proddate.
+    ls_bapi_ext-expiry_date     = it_wa-y0_seldate.
+    ls_bapi_ext-backflush_type  = '2'. "Component backflush
+
+    PERFORM map_header_text_bapi USING it_wa 'WA' CHANGING ls_bapi_gen-header_txt.
+
+    APPEND VALUE #( material = it_wa-materialnr
+                    plant    = it_wa-prodplant
+                    entry_qnt = abs( CONV erfmg( lv_comp_qty ) )
+                    entry_uom = it_wa-unitofmeasure
+                    stge_loc  = it_wa-storageloc
+                    batch     = it_wa-batch ) TO lt_bapi_item.
+
+    CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
+      EXPORTING
+        backflushdatagen = ls_bapi_gen
+        backflushdatext  = ls_bapi_ext
+      IMPORTING
+        return           = ls_bapi_return
+        confirmation     = lv_conf_confirm
+        confcounter      = lv_conf_counter
+        mat_doc          = lv_m_doc
+        doc_year         = lv_m_year
+      TABLES
+        itemdata         = lt_bapi_item.
+
+    PERFORM handle_bapi_return USING ls_bapi_return 'WA' it_wa-materialnr it_wa-y0_hmat.
   ENDLOOP.
 
 ENDFORM.                    " ZAREPBF_POST
 *&---------------------------------------------------------------------*
-*&      Form  fill_first_mfbf_screen
-*&---------------------------------------------------------------------*
-FORM fill_first_mfbf_screen TABLES it_gi STRUCTURE it_zarmmts
-                             USING VALUE(us_zarmmts) LIKE it_zarmmts
-                                   VALUE(us_type).
-
-  DATA: h_budat       TYPE d,
-        h_bldat       TYPE d,
-        h_prdat       TYPE d,
-        h_exdat       TYPE d,
-        h_backflquant LIKE it_zarmmts-backflquant,
-        h_menge       TYPE erfmg,
-        h_bktxt       TYPE rm61b-bktxt.
-
-  CLEAR: h_budat, h_bldat, h_prdat, h_exdat, h_bktxt.
-  h_budat = us_zarmmts-postdate.
-  h_bldat = us_zarmmts-docdate.
-  h_prdat = us_zarmmts-y0_proddate.
-  h_exdat = us_zarmmts-y0_seldate.
-
-  PERFORM bdc_dynpro USING: 'X' 'SAPLBARM' '0800'.
-  IF NOT us_zarmmts-postdate IS INITIAL.
-    PERFORM bdc_dynpro USING: 'D' 'RM61B-BUDAT' h_budat.
-  ENDIF.
-  IF NOT us_zarmmts-docdate IS INITIAL.
-    PERFORM bdc_dynpro USING: 'D' 'RM61B-BLDAT' h_bldat.
-  ENDIF.
-
-
-  IF us_type = 'WE'.
-    TRANSLATE us_zarmmts-backflquant USING ',.'.
-    h_menge = us_zarmmts-backflquant.
-    IF h_menge < 0.
-      h_menge = h_menge * -1.
-    ENDIF.
-    h_backflquant = h_menge.
-    PERFORM translate_quan_for_gui USING us_zarmmts-backflquant.
-    PERFORM translate_quan_for_gui USING h_backflquant.
-
-*dhoermann 20230301 ERPMM-2619
-    IF gs_zatpde_cust-plo_2_htext_gr EQ abap_true.
-      h_bktxt = |{ us_zarmmts-planorder }|.
-    ELSE.
-      h_bktxt = us_zarmmts-batch.
-    ENDIF.
-
-*   header text special logic for STI (planned order number)
-    LOOP AT it_gi WHERE y0_hmat   = us_zarmmts-materialnr
-                    AND y0_hcharg = us_zarmmts-batch.
-*{   REPLACE        R9SK901046                                        2
-*\      SELECT SINGLE * FROM y0mm_svpo_fixval WHERE matnr = it_gi-materialnr
-      SELECT SINGLE * FROM y0mm_svpo_fixval WHERE matnr = it_gi-material_long
-*}   REPLACE
-                                              AND werks = it_gi-prodplant
-                                              AND ponum = 'P'. "Planned Order
-      IF sy-subrc = 0.
-        h_bktxt = us_zarmmts-planorder.
-        EXIT.
-      ENDIF.
-    ENDLOOP.
-*
-*dhoermann 20241002 ERPMM-3011
-    IF gs_zatpde_cust-pdc_2_grgi_slip EQ abap_true
-      AND us_zarmmts-pdc_number IS NOT INITIAL
-      AND us_zarmmts-docheadertxt IS INITIAL.
-      h_bktxt = |{ h_bktxt } { '/PD' } { us_zarmmts-pdc_number(10) }|.
-      CONDENSE h_bktxt NO-GAPS.
-    ELSE.
-      " Add header txt from iDoc if provided
-      IF us_zarmmts-docheadertxt IS NOT INITIAL.
-        h_bktxt = |{ h_bktxt } { us_zarmmts-docheadertxt }|.
-      ENDIF.
-    ENDIF.
-    PERFORM bdc_dynpro USING:
-            ' ' 'RM61B-ERFMG' h_backflquant,
-            ' ' 'RM61B-ERFME' us_zarmmts-unitofmeasure,
-            ' ' 'RM61B-ALORT' us_zarmmts-storageloc,
-            ' ' 'RM61B-MATNR' us_zarmmts-materialnr,
-            ' ' 'RM61B-ACHARG' us_zarmmts-batch,
-            ' ' 'RM61B-BKTXT' h_bktxt.
-  ENDIF.
-
-  IF us_type = 'WA'.
-    " Add header txt from iDoc if provided
-    IF us_zarmmts-docheadertxt IS NOT INITIAL.
-      h_bktxt = |{ us_zarmmts-y0_hcharg } { us_zarmmts-docheadertxt }|.
-    ELSE.
-*dhoermann 20230301 ERPMM-2489
-      IF gs_zatpde_cust-plo_2_htext_gi EQ abap_true.
-        h_bktxt = |{ us_zarmmts-planorder }|.
-      ELSE.
-        h_bktxt = |{ us_zarmmts-y0_hcharg }|.
-      ENDIF.
-*dhoermann 20241002 ERPMM-3011
-      IF gs_zatpde_cust-pdc_2_grgi_slip EQ abap_true
-        AND us_zarmmts-pdc_number IS NOT INITIAL.
-        h_bktxt = |{ h_bktxt } { '/PD' } { us_zarmmts-pdc_number(10) }|.
-        CONDENSE h_bktxt NO-GAPS.
-      ENDIF.
-    ENDIF.
-    PERFORM bdc_dynpro USING:
-            ' ' 'RM61B-BKTXT' h_bktxt,
-            ' ' 'RM61B-ACHARG' us_zarmmts-y0_hcharg, "10-43753 for batch where used list
-            ' ' 'RM61B-MATNR' us_zarmmts-y0_hmat.
-  ENDIF.
-  PERFORM bdc_dynpro USING:
-                            ' ' 'RM61B-WERKS'  us_zarmmts-prodplant,
-                            ' ' 'RM61B-PLWERK' us_zarmmts-prodplant.
-  IF NOT us_zarmmts-y0_proddate IS INITIAL.
-    PERFORM bdc_dynpro USING: 'D' 'RM61B-PRODDATE' h_prdat.
-  ENDIF.
-  IF NOT us_zarmmts-y0_seldate IS INITIAL.
-    PERFORM bdc_dynpro USING: 'D' 'RM61B-EXPIRDATE' h_exdat.
-  ENDIF.
-* Check if planned order exists
-* If not find production version and fill dynpro-field
-  SELECT SINGLE plnum FROM plaf INTO plaf-plnum
-         WHERE plnum EQ us_zarmmts-planorder.
-  IF sy-subrc IS INITIAL.
-    PERFORM bdc_dynpro USING: ' ' 'RM61B-PLNUM' us_zarmmts-planorder.
-  ELSE.
-*{   REPLACE        R9SK901046                                        1
-*\    SELECT COUNT(*) FROM mkal WHERE matnr EQ us_zarmmts-y0_hmat
-    SELECT COUNT(*) FROM mkal WHERE matnr EQ us_zarmmts-y0_hmat_long
-*}   REPLACE
-                                AND werks EQ us_zarmmts-prodplant
-                                AND adatu LE h_budat.
-    IF sy-dbcnt EQ 1.
-      PERFORM bdc_dynpro USING: ' ' 'RM61B-PLNUM' ' '.
-    ELSEIF sy-dbcnt GT 1.
-*     Get material document
-      SELECT SINGLE aufnr FROM mseg INTO mseg-aufnr
-*{   REPLACE        R9SK901046                                        3
-*\             WHERE matnr EQ us_zarmmts-y0_hmat
-             WHERE matnr EQ us_zarmmts-y0_hmat_long
-*}   REPLACE
-               AND werks EQ us_zarmmts-prodplant
-               AND charg EQ us_zarmmts-planorder+2
-               AND bwart EQ '131'.
-
-      IF sy-subrc IS INITIAL.
-*      Get production process
-*         clear aufk.
-*         select single procnr from aufk into aufk-procnr
-*                where aufnr eq mseg-aufnr.
-**      Get production version
-*         select verid kadky from keko
-*                into (keko-verid, keko-kadky)
-*                up to 1 rows
-*                where kalnr eq aufk-procnr
-*                  and matnr eq us_zarmmts-y0_hmat
-*                  and werks eq us_zarmmts-prodplant
-*                  and verid ne space
-*                  order by kadky descending.
-*         endselect.
-        SELECT SINGLE verid FROM ckmlmv013 INTO keko-verid
-               WHERE aufnr EQ mseg-aufnr.
-        IF sy-subrc IS INITIAL.
-          PERFORM bdc_dynpro USING: ' ' 'RM61B-VERID' keko-verid.
-          PERFORM bdc_dynpro USING: ' ' 'RM61B-PLNUM' ' '.
-        ENDIF.
-      ENDIF.
-    ENDIF.
-  ENDIF.
-
-ENDFORM.                    " fill_first_mfbf_screen
-*&---------------------------------------------------------------------*
-*&      Form  mfbf_post_corrections
-*&---------------------------------------------------------------------*
-FORM mfbf_post_corrections TABLES it_gi STRUCTURE it_zarmmts
-*{   REPLACE        R9SK901046                                        1
-*\                            USING VALUE(matnr) LIKE mara-matnr
-                            USING VALUE(matnr) LIKE zarmmts-materialnr
-*}   REPLACE
-                                  VALUE(charg) LIKE mch1-charg.
-
-  DATA first TYPE i VALUE 1.
-
-  PERFORM bdc_dynpro USING: ' ' 'BDC_OKCODE' '=ISTDA'.
-
-  LOOP AT it_gi WHERE y0_hmat = matnr AND y0_hcharg = charg.
-    TRANSLATE it_gi-backflquant USING ',.'.
-    PERFORM translate_quan_for_gui USING it_gi-backflquant.
-*
-    PERFORM bdc_dynpro USING: 'X' 'SAPLCOWB' '0130',
-                              ' ' 'BDC_OKCODE' '/00'.
-    IF first = 1.
-      PERFORM bdc_dynpro USING:
-        ' ' 'COWB_COMP-MATNR(01)' it_gi-materialnr,
-        ' ' 'COWB_COMP-ERFMG_R(01)' it_gi-backflquant,
-        ' ' 'COWB_COMP-ERFME(01)' it_gi-unitofmeasure,
-        ' ' 'COWB_COMP-WERKS(01)' it_gi-prodplant,
-        ' ' 'COWB_COMP-LGORT(01)' it_gi-storageloc,
-        'X' 'SAPLCOWB' '0130',
-        ' ' 'BDC_OKCODE' '=P++'.
-      IF NOT it_gi-batch IS INITIAL.
-        PERFORM bdc_dynpro USING ' ' 'COWB_COMP-CHARG(01)' it_gi-batch.
-      ENDIF.
-    ELSE.
-      PERFORM bdc_dynpro USING:
-        ' ' 'COWB_COMP-MATNR(02)' it_gi-materialnr,
-        ' ' 'COWB_COMP-ERFMG_R(02)' it_gi-backflquant,
-        ' ' 'COWB_COMP-ERFME(02)' it_gi-unitofmeasure,
-        ' ' 'COWB_COMP-WERKS(02)' it_gi-prodplant,
-        ' ' 'COWB_COMP-LGORT(02)' it_gi-storageloc,
-        'X' 'SAPLCOWB' '0130',
-        ' ' 'BDC_OKCODE' '=P++'.
-      IF NOT it_gi-batch IS INITIAL.
-        PERFORM bdc_dynpro USING ' ' 'COWB_COMP-CHARG(02)' it_gi-batch.
-      ENDIF.
-    ENDIF.
-    first = 0.
-    DELETE it_gi. "Not to be processed again.
-  ENDLOOP.
-
-  PERFORM bdc_dynpro USING: 'X' 'SAPLCOWB' '0130',
-                            ' ' 'BDC_OKCODE' '=WEIT'.
-
-ENDFORM.                    " mfbf_post_corrections
 *&---------------------------------------------------------------------*
 *&      Form  check_msg
 *&---------------------------------------------------------------------*
@@ -1658,31 +1654,27 @@ FORM add_mkal TABLES t_zarmmts STRUCTURE it_zarmmts
 
   LOOP AT t_zarmmts.
     IF u_postype = co_postype_we.
-      SELECT matnr werks verid FROM mkal
-                               INTO (it_mkal-matnr, it_mkal-werks,
-                                     it_mkal-verid)
-                                 UP TO 1 ROWS
 *{   REPLACE        R9SK901046                                        3
 *\                              WHERE matnr = t_zarmmts-materialnr
-                              WHERE matnr = t_zarmmts-material_long
+      DATA(ls_mkal_buf_local) = VALUE #( gt_mkal_buf[ matnr = t_zarmmts-material_long
+                                                      werks = t_zarmmts-prodplant ] OPTIONAL ).
 *}   REPLACE
-                                AND werks = t_zarmmts-prodplant.
-      ENDSELECT.
-      IF sy-subrc = 0.
+      IF ls_mkal_buf_local IS NOT INITIAL.
+        it_mkal-matnr = ls_mkal_buf_local-matnr.
+        it_mkal-werks = ls_mkal_buf_local-werks.
+        it_mkal-verid = ls_mkal_buf_local-verid.
         COLLECT it_mkal.
       ENDIF.
     ELSEIF u_postype = co_postype_wa.
-      SELECT matnr werks verid FROM mkal
-                               INTO (it_mkal-matnr, it_mkal-werks,
-                                     it_mkal-verid)
-                                 UP TO 1 ROWS
 *{   REPLACE        R9SK901046                                        4
 *\                              WHERE matnr = t_zarmmts-y0_hmat
-                              WHERE matnr = t_zarmmts-y0_hmat_long
+      ls_mkal_buf_local = VALUE #( gt_mkal_buf[ matnr = t_zarmmts-y0_hmat_long
+                                                werks = t_zarmmts-prodplant ] OPTIONAL ).
 *}   REPLACE
-                                AND werks = t_zarmmts-prodplant.
-      ENDSELECT.
-      IF sy-subrc = 0.
+      IF ls_mkal_buf_local IS NOT INITIAL.
+        it_mkal-matnr = ls_mkal_buf_local-matnr.
+        it_mkal-werks = ls_mkal_buf_local-werks.
+        it_mkal-verid = ls_mkal_buf_local-verid.
         COLLECT it_mkal.
       ENDIF.
     ENDIF.
@@ -2592,9 +2584,7 @@ FORM zarepbf_cls_post .
 * process per batch
   LOOP AT lt_mcha.
 *   check if batch exists (on header level), if not create (on plant level because of date fields)
-    SELECT SINGLE matnr charg FROM mch1 INTO (lt_mcha-matnr, lt_mcha-charg) WHERE matnr = lt_mcha-matnr
-                                                                              AND charg = lt_mcha-charg.
-    IF sy-subrc <> 0. "batch does not exist
+    IF NOT line_exists( gt_mch1_buf[ matnr = lt_mcha-matnr charg = lt_mcha-charg ] ).
 
       IF idoc_contrl-mescod = co_mescod_cls. "Classification Update? -> ignore if no batch exists
         PERFORM insert_status USING co_idoc_status_ok 'E' 'Y0PP_IDOCS' '037' lt_mcha-matnr lt_mcha-charg space space.
@@ -2775,6 +2765,143 @@ FORM y0atpdet_map_dd_mat_plt.
     ENDLOOP.
   ENDIF.
 ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form handle_bapi_return
+*&---------------------------------------------------------------------*
+FORM handle_bapi_return USING is_return TYPE bapiret2
+                              iv_type   TYPE char2
+                              iv_matnr  TYPE matnr
+                              iv_charg  TYPE charg_d.
+
+  IF is_return-type CA 'EA'. "Error or Abort
+    idoc_status-status = co_idoc_status_error.
+    PERFORM insert_status USING idoc_status-status
+                                is_return-type
+                                is_return-id
+                                is_return-number
+                                is_return-message_v1
+                                is_return-message_v2
+                                is_return-message_v3
+                                is_return-message_v4.
+    CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+  ELSE.
+    idoc_status-status = co_idoc_status_ok.
+    ADD 1 TO trans_ok.
+
+    DATA(lv_msgno) = COND #( WHEN iv_type = 'WA' THEN '021' ELSE '020' ).
+
+    PERFORM insert_status USING idoc_status-status
+                                'I' co_msgid lv_msgno
+                                iv_matnr
+                                iv_charg
+                                space space.
+
+    PERFORM insert_status USING idoc_status-status
+                                is_return-type
+                                is_return-id
+                                is_return-number
+                                is_return-message_v1
+                                is_return-message_v2
+                                is_return-message_v3
+                                is_return-message_v4.
+
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        wait = 'X'.
+
+    PERFORM create_link USING is_return-type is_return-id
+                              is_return-number
+                              idoc_contrl-docnum idoc_contrl-sndprn.
+  ENDIF.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form map_header_text_bapi
+*&---------------------------------------------------------------------*
+FORM map_header_text_bapi USING us_zarmmts TYPE it_zarmmts
+                                us_type    TYPE char2
+                          CHANGING cv_bktxt TYPE bapi_conf_key-m_doc.
+
+  DATA: h_bktxt TYPE rm61b-bktxt.
+
+  IF us_type = 'WE'.
+    IF gs_zatpde_cust-plo_2_htext_gr EQ abap_true.
+      h_bktxt = |{ us_zarmmts-planorder }|.
+    ELSE.
+      h_bktxt = us_zarmmts-batch.
+    ENDIF.
+
+    " header text special logic for STI (planned order number)
+    DATA(ls_svpo_buf) = VALUE #( gt_svpo_buf[ matnr = us_zarmmts-material_long
+                                              werks = us_zarmmts-prodplant
+                                              ponum = 'P' ] OPTIONAL ).
+    IF ls_svpo_buf IS NOT INITIAL.
+      h_bktxt = us_zarmmts-planorder.
+    ENDIF.
+
+    IF gs_zatpde_cust-pdc_2_grgi_slip EQ abap_true
+      AND us_zarmmts-pdc_number IS NOT INITIAL
+      AND us_zarmmts-docheadertxt IS INITIAL.
+      h_bktxt = |{ h_bktxt } { '/PD' } { us_zarmmts-pdc_number(10) }|.
+      CONDENSE h_bktxt NO-GAPS.
+    ELSE.
+      IF us_zarmmts-docheadertxt IS NOT INITIAL.
+        h_bktxt = |{ h_bktxt } { us_zarmmts-docheadertxt }|.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+  IF us_type = 'WA'.
+    IF us_zarmmts-docheadertxt IS NOT INITIAL.
+      h_bktxt = |{ us_zarmmts-y0_hcharg } { us_zarmmts-docheadertxt }|.
+    ELSE.
+      IF gs_zatpde_cust-plo_2_htext_gi EQ abap_true.
+        h_bktxt = |{ us_zarmmts-planorder }|.
+      ELSE.
+        h_bktxt = |{ us_zarmmts-y0_hcharg }|.
+      ENDIF.
+      IF gs_zatpde_cust-pdc_2_grgi_slip EQ abap_true
+        AND us_zarmmts-pdc_number IS NOT INITIAL.
+        h_bktxt = |{ h_bktxt } { '/PD' } { us_zarmmts-pdc_number(10) }|.
+        CONDENSE h_bktxt NO-GAPS.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+  cv_bktxt = h_bktxt.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form map_prod_version_bapi
+*&---------------------------------------------------------------------*
+FORM map_prod_version_bapi USING us_zarmmts TYPE it_zarmmts
+                           CHANGING cv_verid TYPE verid
+                                    cv_plnum TYPE plnum.
+
+  IF line_exists( gt_plaf_buf[ plnum = us_zarmmts-planorder ] ).
+    cv_plnum = us_zarmmts-planorder.
+  ELSE.
+    DATA(lt_mkal_filtered) = FILTER #( gt_mkal_buf USING KEY matnr_werks
+                                       WHERE matnr = us_zarmmts-y0_hmat_long
+                                         AND werks = us_zarmmts-prodplant ).
+    DELETE lt_mkal_filtered WHERE adatu > us_zarmmts-postdate.
+
+    IF lines( lt_mkal_filtered ) EQ 1.
+       "OK, will be determined by BAPI based on matnr/plant if single version
+    ELSEIF lines( lt_mkal_filtered ) > 1.
+      DATA(ls_mseg_buf) = VALUE #( gt_mseg_buf[ matnr = us_zarmmts-y0_hmat_long
+                                                werks = us_zarmmts-prodplant
+                                                charg = us_zarmmts-planorder+2 ] OPTIONAL ).
+      IF ls_mseg_buf IS NOT INITIAL.
+        cv_verid = VALUE #( gt_ckmlmv013_buf[ aufnr = ls_mseg_buf-aufnr ]-verid OPTIONAL ).
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
 *&---------------------------------------------------------------------*
 *&      Form  ZAREPBF_ADD_FILLING_PLANT
 *&---------------------------------------------------------------------*
@@ -2799,10 +2926,9 @@ FORM zarepbf_add_filling_plant .
       ls_zarmmts = idoc_data[ segnam = co_zarmmts ]-sdata.
 *      Determine correct filling plant
 
-      SELECT SINGLE * FROM y0pp_fill_plant INTO @DATA(ls_fill_p)
-        WHERE werks_prod = @ls_zarmmts-prodplant.
+      DATA(ls_fill_p_local) = VALUE #( gt_fill_plant_buf[ werks_prod = ls_zarmmts-prodplant ] OPTIONAL ).
 
-      IF sy-subrc = 0 AND line_exists( it_zarmcls[ 1 ] ).
+      IF ls_fill_p_local IS NOT INITIAL AND line_exists( it_zarmcls[ 1 ] ).
         APPEND INITIAL LINE TO it_zarmcls ASSIGNING FIELD-SYMBOL(<fs_zarmcls>).
         MOVE-CORRESPONDING it_zarmcls[ 1 ] TO <fs_zarmcls>.
         <fs_zarmcls>-id = 'Y0_FILLING_PLANT'.
