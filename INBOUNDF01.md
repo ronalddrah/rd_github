@@ -89,6 +89,11 @@ FORM zarepbf_idoc_parse.
            werks TYPE werks_d,
          END OF ty_rem_srvplnt_buf_local.
 
+  TYPES: BEGIN OF ty_rem_service_buf,
+           hmatn TYPE matnr,
+           werks TYPE werks_d,
+         END OF ty_rem_service_buf.
+
   DATA: lt_matnr_keys TYPE STANDARD TABLE OF ty_mara_buf WITH EMPTY KEY,
         lt_mkal_keys  TYPE STANDARD TABLE OF ty_mkal_buf WITH EMPTY KEY,
         lt_mch1_keys  TYPE STANDARD TABLE OF ty_mch1_buf WITH EMPTY KEY,
