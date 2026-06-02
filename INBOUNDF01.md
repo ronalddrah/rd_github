@@ -1,36 +1,36 @@
 *----------------------------------------------------------------------*
 ***INCLUDE LY0_PP_FM_IDOC_INBOUNDF01 .
 *----------------------------------------------------------------------*
-DATA: BEGIN OF ty_mara_buf,
-        matnr TYPE matnr,
-        mtart TYPE mtart,
-        meins TYPE meins,
-        xchpf TYPE xchpf,
-        bismt TYPE bismt,
-      END OF ty_mara_buf.
+TYPES: BEGIN OF ty_mara_buf,
+         matnr TYPE matnr,
+         mtart TYPE mtart,
+         meins TYPE meins,
+         xchpf TYPE xchpf,
+         bismt TYPE bismt,
+       END OF ty_mara_buf.
 DATA: gt_mara_buf HASHED TABLE OF ty_mara_buf WITH UNIQUE KEY matnr
                                               WITH NON-UNIQUE SORTED KEY bismt COMPONENTS bismt.
 
-DATA: BEGIN OF ty_mkal_buf,
-        matnr TYPE matnr,
-        werks TYPE werks_d,
-        verid TYPE verid,
-        adatu TYPE adatu,
-      END OF ty_mkal_buf.
+TYPES: BEGIN OF ty_mkal_buf,
+         matnr TYPE matnr,
+         werks TYPE werks_d,
+         verid TYPE verid,
+         adatu TYPE adatu,
+       END OF ty_mkal_buf.
 DATA: gt_mkal_buf SORTED TABLE OF ty_mkal_buf WITH NON-UNIQUE KEY matnr werks
                                               WITH NON-UNIQUE KEY matnr_werks COMPONENTS matnr werks.
 
-DATA: BEGIN OF ty_mch1_buf,
-        matnr TYPE matnr,
-        werks TYPE werks_d,
-        charg TYPE charg_d,
-      END OF ty_mch1_buf.
+TYPES: BEGIN OF ty_mch1_buf,
+         matnr TYPE matnr,
+         werks TYPE werks_d,
+         charg TYPE charg_d,
+       END OF ty_mch1_buf.
 DATA: gt_mch1_buf SORTED TABLE OF ty_mch1_buf WITH NON-UNIQUE KEY matnr charg.
 
-DATA: BEGIN OF ty_plaf_buf,
-        plnum TYPE plnum,
-        pwwrk TYPE werks_d,
-      END OF ty_plaf_buf.
+TYPES: BEGIN OF ty_plaf_buf,
+         plnum TYPE plnum,
+         pwwrk TYPE werks_d,
+       END OF ty_plaf_buf.
 DATA: gt_plaf_buf HASHED TABLE OF ty_plaf_buf WITH UNIQUE KEY plnum.
 
 DATA: gt_rbfqty_buf TYPE HASHED TABLE OF y0pp_calc_rbfqty WITH UNIQUE KEY matnr pstyp.
@@ -38,40 +38,41 @@ DATA: gt_svpo_buf TYPE HASHED TABLE OF y0mm_svpo_fixval WITH UNIQUE KEY matnr we
 DATA: gt_fill_plant_buf TYPE HASHED TABLE OF y0pp_fill_plant WITH UNIQUE KEY werks_prod.
 DATA: gt_rem_srvplnt_buf TYPE HASHED TABLE OF y0pp_rem_srvplnt WITH UNIQUE KEY werks.
 DATA: gt_zatpde_send_buf TYPE HASHED TABLE OF y0pp_zatpde_send WITH UNIQUE KEY plnum.
-DATA: gt_rem_service_buf TYPE SORTED TABLE OF y0pp_rem_service WITH NON-UNIQUE KEY hmatn werks.
+DATA: gt_rem_service_buf TYPE SORTED TABLE OF y0pp_rem_service WITH NON-UNIQUE KEY hmatn werks
+                                                              WITH NON-UNIQUE KEY hmatn_werks COMPONENTS hmatn werks.
 DATA: gt_zatpde_calc_buf TYPE HASHED TABLE OF y0pp_zatpde_calc WITH UNIQUE KEY sender plorder display component.
 
-DATA: BEGIN OF ty_mseg_buf,
-        matnr TYPE matnr,
-        werks TYPE werks_d,
-        charg TYPE charg_d,
-        aufnr TYPE aufnr,
-      END OF ty_mseg_buf.
+TYPES: BEGIN OF ty_mseg_buf,
+         matnr TYPE matnr,
+         werks TYPE werks_d,
+         charg TYPE charg_d,
+         aufnr TYPE aufnr,
+       END OF ty_mseg_buf.
 DATA: gt_mseg_buf HASHED TABLE OF ty_mseg_buf WITH UNIQUE KEY matnr werks charg.
 
-DATA: BEGIN OF ty_ckmlmv013_buf,
-        aufnr TYPE aufnr,
-        verid TYPE verid,
-      END OF ty_ckmlmv013_buf.
+TYPES: BEGIN OF ty_ckmlmv013_buf,
+         aufnr TYPE aufnr,
+         verid TYPE verid,
+       END OF ty_ckmlmv013_buf.
 DATA: gt_ckmlmv013_buf HASHED TABLE OF ty_ckmlmv013_buf WITH UNIQUE KEY aufnr.
 
-DATA: BEGIN OF ty_cabn_buf,
-        atinn TYPE atinn,
-        atnam TYPE atnam,
-        anzst TYPE anzst,
-        atfor TYPE atfor,
-      END OF ty_cabn_buf.
+TYPES: BEGIN OF ty_cabn_buf,
+         atinn TYPE atinn,
+         atnam TYPE atnam,
+         anzst TYPE anzst,
+         atfor TYPE atfor,
+       END OF ty_cabn_buf.
 DATA: gt_cabn_buf HASHED TABLE OF ty_cabn_buf WITH UNIQUE KEY atnam.
 
-DATA: BEGIN OF ty_class_chars_buf,
-        atnam TYPE atnam,
-      END OF ty_class_chars_buf.
+TYPES: BEGIN OF ty_class_chars_buf,
+         atnam TYPE atnam,
+       END OF ty_class_chars_buf.
 DATA: gt_class_chars_buf HASHED TABLE OF ty_class_chars_buf WITH UNIQUE KEY atnam.
 
-DATA: BEGIN OF ty_char_detail_buf,
-        atnam TYPE atnam,
-        atbew TYPE atbew,
-      END OF ty_char_detail_buf.
+TYPES: BEGIN OF ty_char_detail_buf,
+         atnam TYPE atnam,
+         atbew TYPE atbew,
+       END OF ty_char_detail_buf.
 DATA: gt_char_detail_buf HASHED TABLE OF ty_char_detail_buf WITH UNIQUE KEY atnam.
 
 *&---------------------------------------------------------------------*
@@ -594,12 +595,12 @@ FORM zarepbf_post.
     ls_bapi_gen-plant          = it_re-prodplant.
     DATA(lv_qty_in) = it_re-backflquant.
     TRANSLATE lv_qty_in USING ',.'.
-    ls_bapi_gen-bckfl_qty      = abs( CONV erfmg( lv_qty_in ) ).
-    ls_bapi_gen-unitofmeas     = it_re-unitofmeasure.
+    ls_bapi_gen-conf_quant     = abs( CONV erfmg( lv_qty_in ) ).
+    ls_bapi_gen-unit_of_meas   = it_re-unitofmeasure.
     ls_bapi_gen-post_date      = it_re-postdate.
     ls_bapi_gen-doc_date       = it_re-docdate.
     ls_bapi_gen-batch          = it_re-batch.
-    ls_bapi_gen-storageloc     = it_re-storageloc.
+    ls_bapi_gen-storage_loc    = it_re-storageloc.
 
     CASE it_re-insmk.
       WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
@@ -607,12 +608,12 @@ FORM zarepbf_post.
       WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
 
-    ls_bapi_ext-proddate    = it_re-y0_proddate.
-    ls_bapi_ext-vfdat       = it_re-y0_seldate.
-    ls_bapi_ext-bckfltype   = '1'. "Assembly backflush
+    ls_bapi_ext-prod_date   = it_re-y0_proddate.
+    ls_bapi_ext-expirydate  = it_re-y0_seldate.
+    ls_bapi_ext-backfltype  = '1'. "Assembly backflush
 
     PERFORM map_header_text_bapi USING it_re 'WE' CHANGING ls_bapi_gen-header_txt.
-    PERFORM map_prod_version_bapi USING it_re CHANGING ls_bapi_gen-prod_ver ls_bapi_gen-planned_or.
+    PERFORM map_prod_version_bapi USING it_re CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
 
     " Component corrections
     LOOP AT it_ra WHERE y0_hmat = it_re-materialnr AND y0_hcharg = it_re-batch.
@@ -620,9 +621,9 @@ FORM zarepbf_post.
       TRANSLATE lv_ra_qty USING ',.'.
       APPEND VALUE #( material_long = it_ra-material_long
                       plant         = it_ra-prodplant
-                      bckfl_qty     = abs( CONV erfmg( lv_ra_qty ) )
-                      unitofmeas    = it_ra-unitofmeasure
-                      storageloc    = it_ra-storageloc
+                      conf_quant    = abs( CONV erfmg( lv_ra_qty ) )
+                      unit_of_meas  = it_ra-unitofmeasure
+                      storage_loc   = it_ra-storageloc
                       batch         = it_ra-batch ) TO lt_bapi_item.
       DELETE it_ra.
     ENDLOOP.
@@ -653,12 +654,12 @@ FORM zarepbf_post.
     ls_bapi_gen-plant          = it_we-prodplant.
     DATA(lv_we_qty) = it_we-backflquant.
     TRANSLATE lv_we_qty USING ',.'.
-    ls_bapi_gen-bckfl_qty      = abs( CONV erfmg( lv_we_qty ) ).
-    ls_bapi_gen-unitofmeas     = it_we-unitofmeasure.
+    ls_bapi_gen-conf_quant     = abs( CONV erfmg( lv_we_qty ) ).
+    ls_bapi_gen-unit_of_meas   = it_we-unitofmeasure.
     ls_bapi_gen-post_date      = it_we-postdate.
     ls_bapi_gen-doc_date       = it_we-docdate.
     ls_bapi_gen-batch          = it_we-batch.
-    ls_bapi_gen-storageloc     = it_we-storageloc.
+    ls_bapi_gen-storage_loc    = it_we-storageloc.
 
     CASE it_we-insmk.
       WHEN ' ' OR 'F'. ls_bapi_gen-stock_type = ' '.
@@ -666,12 +667,12 @@ FORM zarepbf_post.
       WHEN 'S'.        ls_bapi_gen-stock_type = 'S'.
     ENDCASE.
 
-    ls_bapi_ext-proddate    = it_we-y0_proddate.
-    ls_bapi_ext-vfdat       = it_we-y0_seldate.
-    ls_bapi_ext-bckfltype   = '1'. "Assembly backflush
+    ls_bapi_ext-prod_date   = it_we-y0_proddate.
+    ls_bapi_ext-expirydate  = it_we-y0_seldate.
+    ls_bapi_ext-backfltype  = '1'. "Assembly backflush
 
     PERFORM map_header_text_bapi USING it_we 'WE' CHANGING ls_bapi_gen-header_txt.
-    PERFORM map_prod_version_bapi USING it_we CHANGING ls_bapi_gen-prod_ver ls_bapi_gen-planned_or.
+    PERFORM map_prod_version_bapi USING it_we CHANGING ls_bapi_gen-prod_version ls_bapi_gen-planned_order.
 
     " Component corrections
     LOOP AT it_wa WHERE y0_hmat = it_we-materialnr AND y0_hcharg = it_we-batch.
@@ -679,9 +680,9 @@ FORM zarepbf_post.
       TRANSLATE lv_wa_qty USING ',.'.
       APPEND VALUE #( material_long = it_wa-material_long
                       plant         = it_wa-prodplant
-                      bckfl_qty     = abs( CONV erfmg( lv_wa_qty ) )
-                      unitofmeas    = it_wa-unitofmeasure
-                      storageloc    = it_wa-storageloc
+                      conf_quant    = abs( CONV erfmg( lv_wa_qty ) )
+                      unit_of_meas  = it_wa-unitofmeasure
+                      storage_loc   = it_wa-storageloc
                       batch         = it_wa-batch ) TO lt_bapi_item.
       DELETE it_wa.
     ENDLOOP.
@@ -736,14 +737,14 @@ FORM zarepbf_post.
     ls_bapi_gen-plant          = it_wa-prodplant.
     DATA(lv_comp_qty_raw) = it_wa-backflquant.
     TRANSLATE lv_comp_qty_raw USING ',.'.
-    ls_bapi_gen-bckfl_qty      = 0. "Component only
+    ls_bapi_gen-conf_quant     = 0. "Component only
     ls_bapi_gen-post_date      = it_wa-postdate.
     ls_bapi_gen-doc_date       = it_wa-docdate.
     ls_bapi_gen-batch          = it_wa-y0_hcharg.
 
-    ls_bapi_ext-proddate    = it_wa-y0_proddate.
-    ls_bapi_ext-vfdat       = it_wa-y0_seldate.
-    ls_bapi_ext-bckfltype   = '2'. "Component backflush
+    ls_bapi_ext-prod_date   = it_wa-y0_proddate.
+    ls_bapi_ext-expirydate  = it_wa-y0_seldate.
+    ls_bapi_ext-backfltype  = '2'. "Component backflush
 
     PERFORM map_header_text_bapi USING it_wa 'WA' CHANGING ls_bapi_gen-header_txt.
 
@@ -751,9 +752,9 @@ FORM zarepbf_post.
     TRANSLATE lv_comp_qty_mapped USING ',.'.
     APPEND VALUE #( material_long = it_wa-material_long
                     plant         = it_wa-prodplant
-                    bckfl_qty     = abs( CONV erfmg( lv_comp_qty_mapped ) )
-                    unitofmeas    = it_wa-unitofmeasure
-                    storageloc    = it_wa-storageloc
+                    conf_quant    = abs( CONV erfmg( lv_comp_qty_mapped ) )
+                    unit_of_meas  = it_wa-unitofmeasure
+                    storage_loc   = it_wa-storageloc
                     batch         = it_wa-batch ) TO lt_bapi_item.
 
     CALL FUNCTION 'BAPI_REPMANCONF1_CREATE_MTS'
@@ -2881,7 +2882,7 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 FORM map_prod_version_bapi USING us_zarmmts TYPE zarmmts
                            CHANGING cv_verid TYPE verid
-                                    cv_plnum TYPE bapi_rm_datgen-planned_or.
+                                    cv_plnum TYPE bapi_rm_datgen-planned_order.
 
   IF line_exists( gt_plaf_buf[ plnum = us_zarmmts-planorder ] ).
     cv_plnum = us_zarmmts-planorder.

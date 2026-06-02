@@ -119,6 +119,7 @@ FUNCTION za_idoc_input_zrepbf
     PERFORM zarepbf_add_service_materials TABLES it_re it_ra USING 'X'.
 * For HFG add service material for consumed FERT (only for new settlement)
     SELECT * FROM y0pp_rem_no_hfg INTO TABLE it_no_hfg. "Get plant execptions for HFG process
+    SELECT SINGLE * FROM y0pp_rem_active.
     REFRESH it_hfg.
     LOOP AT it_wa.
 * No HFG processing for specific plants (CDP plants -> consumned FERTs already settled)
@@ -136,16 +137,15 @@ FUNCTION za_idoc_input_zrepbf
         EXCEPTIONS
           length_error = 1
           OTHERS       = 2.
-      SELECT SINGLE mtart INTO l_mtart FROM mara WHERE matnr = l_matnr.
-      IF sy-subrc = 0 AND l_mtart = 'FERT'.
+      l_mtart = VALUE #( gt_mara_buf[ matnr = l_matnr ]-mtart OPTIONAL ).
+      IF l_mtart IS NOT INITIAL AND l_mtart = 'FERT'.
         APPEND it_wa TO it_hfg.
       ENDIF.
     ENDLOOP.
     DESCRIBE TABLE it_hfg LINES l_lines.
     IF l_lines > 0.
       READ TABLE it_hfg INDEX 1.
-      SELECT SINGLE * FROM y0pp_rem_active.
-      IF y0pp_rem_active-datum LE it_hfg-postdate AND sy-subrc IS INITIAL.
+      IF y0pp_rem_active IS NOT INITIAL AND y0pp_rem_active-datum LE it_hfg-postdate.
         PERFORM zarepbf_add_service_materials TABLES it_hfg it_wa USING 'R'.
       ENDIF.
     ENDIF.
