@@ -25,6 +25,138 @@ FUNCTION za_idoc_input_mbgmcr
   CONSTANTS: co_mbgmcr_head TYPE edi_dd40-segnam VALUE 'E1BP2017_GM_HEAD_01',
              co_mbgmcr_item TYPE edi_dd40-segnam VALUE 'E1BP2017_GM_ITEM_CREATE'.
 
+  TYPES: BEGIN OF ty_mara_buf,
+           matnr TYPE mara-matnr,
+           labor TYPE mara-labor,
+           mtart TYPE mara-mtart,
+           meins TYPE mara-meins,
+           xchpf TYPE mara-xchpf,
+         END OF ty_mara_buf,
+         tt_mara_buf TYPE HASHED TABLE OF ty_mara_buf WITH UNIQUE KEY matnr.
+
+  TYPES: BEGIN OF ty_ekko_buf,
+           ebeln TYPE ekko-ebeln,
+           bsart TYPE ekko-bsart,
+           lifnr TYPE ekko-lifnr,
+           bedat TYPE ekko-bedat,
+         END OF ty_ekko_buf,
+         tt_ekko_buf TYPE HASHED TABLE OF ty_ekko_buf WITH UNIQUE KEY ebeln.
+
+  TYPES: BEGIN OF ty_ekpo_buf,
+           ebeln TYPE ekpo-ebeln,
+           ebelp TYPE ekpo-ebelp,
+           matnr TYPE ekpo-matnr,
+           werks TYPE ekpo-werks,
+           bednr TYPE ekpo-bednr,
+           afnam TYPE ekpo-afnam,
+           loekz TYPE ekpo-loekz,
+           elikz TYPE ekpo-elikz,
+           bstyp TYPE ekpo-bstyp,
+           insmk TYPE ekpo-insmk,
+           weora TYPE ekpo-weora,
+         END OF ty_ekpo_buf,
+         tt_ekpo_buf TYPE SORTED TABLE OF ty_ekpo_buf WITH UNIQUE KEY ebeln ebelp
+                     WITH NON-UNIQUE SORTED KEY k_bednr COMPONENTS bednr
+                     WITH NON-UNIQUE SORTED KEY k_mat   COMPONENTS werks matnr.
+
+  TYPES: BEGIN OF ty_eket_buf,
+           ebeln TYPE eket-ebeln,
+           ebelp TYPE eket-ebelp,
+           etenr TYPE eket-etenr,
+           wemng TYPE eket-wemng,
+           menge TYPE eket-menge,
+         END OF ty_eket_buf,
+         tt_eket_buf TYPE SORTED TABLE OF ty_eket_buf WITH UNIQUE KEY ebeln ebelp etenr.
+
+  TYPES: BEGIN OF ty_ekes_buf,
+           ebeln TYPE ekes-ebeln,
+           ebelp TYPE ekes-ebelp,
+           etens TYPE ekes-etens,
+           charg TYPE ekes-charg,
+           vbeln TYPE ekes-vbeln,
+           vbelp TYPE ekes-vbelp,
+           loekz TYPE ekes-loekz,
+           dabmg TYPE ekes-dabmg,
+           menge TYPE ekes-menge,
+         END OF ty_ekes_buf,
+         tt_ekes_buf TYPE SORTED TABLE OF ty_ekes_buf WITH UNIQUE KEY ebeln ebelp etens
+                     WITH NON-UNIQUE SORTED KEY k_charg COMPONENTS ebeln ebelp charg
+                     WITH NON-UNIQUE SORTED KEY k_ref   COMPONENTS vbeln vbelp.
+
+  TYPES: BEGIN OF ty_ekbe_buf,
+           ebeln TYPE ekbe-ebeln,
+           ebelp TYPE ekbe-ebelp,
+           vgabe TYPE ekbe-vgabe,
+           gjahr TYPE ekbe-gjahr,
+           belnr TYPE ekbe-belnr,
+           buzei TYPE ekbe-buzei,
+           matnr TYPE ekbe-matnr,
+           werks TYPE ekbe-werks,
+           xblnr TYPE ekbe-xblnr,
+           menge TYPE ekbe-menge,
+           shkzg TYPE ekbe-shkzg,
+           lfgja TYPE ekbe-lfgja,
+           lfbnr TYPE ekbe-lfbnr,
+           lfpos TYPE ekbe-lfpos,
+           bamng TYPE ekbe-bamng,
+           bwart TYPE ekbe-bwart,
+         END OF ty_ekbe_buf,
+         tt_ekbe_buf TYPE SORTED TABLE OF ty_ekbe_buf WITH UNIQUE KEY ebeln ebelp vgabe gjahr belnr buzei
+                     WITH NON-UNIQUE SORTED KEY k_ref COMPONENTS ebeln ebelp matnr werks xblnr
+                     WITH NON-UNIQUE SORTED KEY k_del COMPONENTS belnr buzei.
+
+  TYPES: BEGIN OF ty_likp_buf,
+           vbeln TYPE likp-vbeln,
+           lfart TYPE likp-lfart,
+           vbtyp TYPE likp-vbtyp,
+           pkstk TYPE likp-pkstk,
+         END OF ty_likp_buf,
+         tt_likp_buf TYPE HASHED TABLE OF ty_likp_buf WITH UNIQUE KEY vbeln.
+
+  TYPES: BEGIN OF ty_lips_buf,
+           vbeln TYPE lips-vbeln,
+           posnr TYPE lips-posnr,
+           werks TYPE lips-werks,
+           lgort TYPE lips-lgort,
+           uecha TYPE lips-uecha,
+           matnr TYPE lips-matnr,
+           charg TYPE lips-charg,
+           meins TYPE lips-meins,
+           vrkme TYPE lips-vrkme,
+           vgbel TYPE lips-vgbel,
+           vgpos TYPE lips-vgpos,
+           wbsta TYPE lips-wbsta,
+         END OF ty_lips_buf,
+         tt_lips_buf TYPE SORTED TABLE OF ty_lips_buf WITH UNIQUE KEY vbeln posnr
+                     WITH NON-UNIQUE SORTED KEY k_ref   COMPONENTS vgbel vgpos matnr charg
+                     WITH NON-UNIQUE SORTED KEY k_vbeln COMPONENTS vbeln.
+
+  TYPES: BEGIN OF ty_t156_buf,
+           bwart TYPE t156-bwart,
+           shkzg TYPE t156-shkzg,
+         END OF ty_t156_buf,
+         tt_t156_buf TYPE HASHED TABLE OF ty_t156_buf WITH UNIQUE KEY bwart.
+
+  TYPES: BEGIN OF ty_mbew_buf,
+           matnr TYPE mbew-matnr,
+           bwkey TYPE mbew-bwkey,
+           peinh TYPE mbew-peinh,
+           bwprs TYPE mbew-bwprs,
+         END OF ty_mbew_buf,
+         tt_mbew_buf TYPE HASHED TABLE OF ty_mbew_buf WITH UNIQUE KEY matnr bwkey.
+
+  TYPES: BEGIN OF ty_t001w_buf,
+           werks TYPE t001w-werks,
+           bwkey TYPE t001w-bwkey,
+         END OF ty_t001w_buf,
+         tt_t001w_buf TYPE HASHED TABLE OF ty_t001w_buf WITH UNIQUE KEY werks.
+
+  TYPES: BEGIN OF ty_t001k_buf,
+           bwkey TYPE t001k-bwkey,
+           bukrs TYPE t001k-bukrs,
+         END OF ty_t001k_buf,
+         tt_t001k_buf TYPE HASHED TABLE OF ty_t001k_buf WITH UNIQUE KEY bwkey.
+
   DATA: BEGIN OF it_lock OCCURS 0,
           ebeln LIKE ekko-ebeln,
           lock  TYPE c,
@@ -60,6 +192,53 @@ FUNCTION za_idoc_input_mbgmcr
 
   DATA: lv_dd_map TYPE abap_bool.
   DATA lv_matnr TYPE matnr.
+
+  " Performance Buffers
+  TYPES: BEGIN OF ty_t001l_buf,
+           werks TYPE t001l-werks,
+           lgort TYPE t001l-lgort,
+           xhupf TYPE t001l-xhupf,
+         END OF ty_t001l_buf,
+         tt_t001l_buf TYPE HASHED TABLE OF ty_t001l_buf WITH UNIQUE KEY werks lgort.
+
+  TYPES: BEGIN OF ty_qals_buf,
+           prueflos    TYPE qals-prueflos,
+           werk        TYPE qals-werk,
+           charg       TYPE qals-charg,
+           matnr       TYPE qals-matnr,
+           werkvorg    TYPE qals-werkvorg,
+           lagortvorg  TYPE qals-lagortvorg,
+         END OF ty_qals_buf,
+         tt_qals_buf TYPE SORTED TABLE OF ty_qals_buf WITH NON-UNIQUE KEY charg matnr werkvorg lagortvorg.
+
+  DATA: gt_mara_buf        TYPE tt_mara_buf,
+        gt_ekko_buf        TYPE tt_ekko_buf,
+        gt_ekpo_buf        TYPE tt_ekpo_buf,
+        gt_eket_buf        TYPE tt_eket_buf,
+        gt_ekes_buf        TYPE tt_ekes_buf,
+        gt_ekbe_buf        TYPE tt_ekbe_buf,
+        gt_likp_buf        TYPE tt_likp_buf,
+        gt_lips_buf        TYPE tt_lips_buf,
+        gt_t156_buf        TYPE tt_t156_buf,
+        gt_mbew_buf        TYPE tt_mbew_buf,
+        gt_t001w_buf       TYPE tt_t001w_buf,
+        gt_t001k_buf       TYPE tt_t001k_buf,
+        gt_t001l_buf       TYPE tt_t001l_buf,
+        gt_qals_buf        TYPE tt_qals_buf,
+        gt_goodsmvt_label  TYPE TABLE OF bapi2017_gm_item_create,
+        gv_spe_inb_vl_mm   TYPE abap_bool,
+        gt_dd_plt_buf      TYPE SORTED TABLE OF y0bc_idoc_dd_plt WITH NON-UNIQUE KEY partyp parnum mestyp,
+        gt_matnrcnv_buf    TYPE HASHED TABLE OF y0mm_gm_matnrcnv WITH UNIQUE KEY sndprn,
+        gt_rbfqty_buf      TYPE HASHED TABLE OF y0pp_calc_rbfqty WITH UNIQUE KEY matnr,
+        gt_lifnrcnv_buf    TYPE HASHED TABLE OF y0mm_gm_lifnrcnv WITH UNIQUE KEY sndprn lifnr_ext,
+        gt_weora_buf       TYPE HASHED TABLE OF y0mm_migo_weora WITH UNIQUE KEY rcvpor,
+        gt_yudc_trans_buf  TYPE SORTED TABLE OF yudc_trans WITH NON-UNIQUE KEY gm_code lgort_from bwart lgort_to,
+        gt_ale_delay_buf   TYPE HASHED TABLE OF y0ca_ale_delay WITH UNIQUE KEY mesty,
+        gt_mbgmcr_lib_buf  TYPE HASHED TABLE OF yusmm_mbgmcr_lib WITH UNIQUE KEY sndprn,
+        gt_idoc_tr_buf     TYPE SORTED TABLE OF ybrmm_idoc_tr WITH NON-UNIQUE KEY mestyp werks lgort,
+        gt_mbgmcr_tr_buf   TYPE SORTED TABLE OF y0mm_mbgmcr_tr WITH NON-UNIQUE KEY sndprn transfer,
+        gt_inbounddeli_buf TYPE SORTED TABLE OF y0mm_inbounddeli WITH UNIQUE KEY zndprn lfart bwart mtart,
+        gt_bwart_po_buf    TYPE SORTED TABLE OF y0mm_bwart_po WITH UNIQUE KEY bwart.
 
   DATA: ls_poheader     TYPE  bapimepoheader,
         ls_poheaderx    TYPE bapimepoheaderx,
@@ -147,6 +326,7 @@ FUNCTION za_idoc_input_mbgmcr
 
 * get customer customizing
   SELECT * FROM y0mm_bwart_po INTO TABLE it_bwart_po.
+  gt_bwart_po_buf = it_bwart_po.
   SELECT * FROM y0mm_po_fixval INTO TABLE it_po_fixval.
   SELECT * FROM y0mm_gm_conv INTO TABLE it_gm_conv.
   SELECT * FROM y0mm_gmpo_noinv INTO TABLE it_noinv.
@@ -155,13 +335,356 @@ FUNCTION za_idoc_input_mbgmcr
   SELECT * FROM y0mm_inbounddeli                            "$TP220206
            INTO TABLE it_y0mm_inbounddeli                   "$TP220206
             ORDER BY PRIMARY KEY.                           "$TP220206
+  gt_inbounddeli_buf = it_y0mm_inbounddeli.
+
+  " --- Pre-fetch: Configuration and Small Tables ---
+  SELECT * FROM y0bc_idoc_dd_plt INTO TABLE @gt_dd_plt_buf.
+  SELECT * FROM y0mm_gm_matnrcnv INTO TABLE @gt_matnrcnv_buf.
+  SELECT * FROM y0mm_gm_lifnrcnv INTO TABLE @gt_lifnrcnv_buf.
+  SELECT * FROM y0mm_migo_weora INTO TABLE @gt_weora_buf.
+  SELECT * FROM yudc_trans INTO TABLE @gt_yudc_trans_buf.
+  SELECT * FROM y0ca_ale_delay INTO TABLE @gt_ale_delay_buf.
+  SELECT * FROM yusmm_mbgmcr_lib INTO TABLE @gt_mbgmcr_lib_buf.
+  SELECT * FROM ybrmm_idoc_tr INTO TABLE @gt_idoc_tr_buf.
+  SELECT * FROM y0mm_mbgmcr_tr INTO TABLE @gt_mbgmcr_tr_buf.
+  SELECT SINGLE spe_inb_vl_mm FROM tvshp INTO @gv_spe_inb_vl_mm.
+
+  " --- Pre-fetch: Collect Search Keys from IDocs ---
+  SORT idoc_data BY docnum ASCENDING segnam ASCENDING.
+
+  DATA: BEGIN OF ty_mat_coll,
+          matnr TYPE matnr,
+        END OF ty_mat_coll,
+        BEGIN OF ty_qals_coll,
+          charg       TYPE qals-charg,
+          matnr       TYPE qals-matnr,
+          werkvorg    TYPE qals-werkvorg,
+          lagortvorg  TYPE qals-lagortvorg,
+        END OF ty_qals_coll,
+        lt_qals_coll TYPE SORTED TABLE OF ty_qals_coll WITH UNIQUE KEY charg matnr werkvorg lagortvorg,
+        lt_mat_coll TYPE SORTED TABLE OF ty_mat_coll WITH UNIQUE KEY matnr,
+        BEGIN OF ty_ebeln_coll,
+          ebeln TYPE ebeln,
+        END OF ty_ebeln_coll,
+        lt_ebeln_coll TYPE SORTED TABLE OF ty_ebeln_coll WITH UNIQUE KEY ebeln,
+        BEGIN OF ty_ebeln_ebelp_coll,
+          ebeln TYPE ebeln,
+          ebelp TYPE ebelp,
+        END OF ty_ebeln_ebelp_coll,
+        lt_ebeln_ebelp_coll TYPE SORTED TABLE OF ty_ebeln_ebelp_coll WITH UNIQUE KEY ebeln ebelp,
+        BEGIN OF ty_vbeln_coll,
+          vbeln TYPE vbeln_vl,
+        END OF ty_vbeln_coll,
+        lt_vbeln_coll TYPE SORTED TABLE OF ty_vbeln_coll WITH UNIQUE KEY vbeln,
+        BEGIN OF ty_werks_lgort_coll,
+          werks TYPE werks_d,
+          lgort TYPE lgort_d,
+        END OF ty_werks_lgort_coll,
+        lt_werks_lgort_coll TYPE SORTED TABLE OF ty_werks_lgort_coll WITH UNIQUE KEY werks lgort,
+        BEGIN OF ty_werks_coll,
+          werks TYPE werks_d,
+        END OF ty_werks_coll,
+        lt_werks_coll TYPE SORTED TABLE OF ty_werks_coll WITH UNIQUE KEY werks,
+        BEGIN OF ty_bwkey_coll,
+          bwkey TYPE bwkey,
+        END OF ty_bwkey_coll,
+        lt_bwkey_coll TYPE SORTED TABLE OF ty_bwkey_coll WITH UNIQUE KEY bwkey,
+        BEGIN OF ty_mat_werks,
+          matnr TYPE matnr,
+          werks TYPE werks_d,
+        END OF ty_mat_werks,
+        lt_mat_werks TYPE SORTED TABLE OF ty_mat_werks WITH UNIQUE KEY matnr werks,
+        lt_mat_coll_tmp TYPE STANDARD TABLE OF ty_mat_coll,
+        lt_ebeln_coll_tmp TYPE STANDARD TABLE OF ty_ebeln_coll,
+        lt_vbeln_coll_tmp TYPE STANDARD TABLE OF ty_vbeln_coll,
+        lt_werks_coll_tmp TYPE STANDARD TABLE OF ty_werks_coll,
+        lt_mat_werks_tmp TYPE STANDARD TABLE OF ty_mat_werks,
+        ls_head_tmp TYPE e1bp2017_gm_head_01,
+        ls_item_tmp TYPE e1bp2017_gm_item_create,
+        lv_dd_map_tmp TYPE abap_bool.
+
+  LOOP AT idoc_contrl INTO DATA(ls_idoc_ctrl_tmp).
+    CLEAR ls_head_tmp.
+    READ TABLE idoc_data INTO DATA(ls_idoc_data_head) WITH KEY docnum = ls_idoc_ctrl_tmp-docnum
+                                                               segnam = 'E1BP2017_GM_HEAD_01' BINARY SEARCH.
+    IF sy-subrc = 0.
+      ls_head_tmp = ls_idoc_data_head-sdata.
+    ENDIF.
+
+    " Check mapping relevance for key collection
+    lv_dd_map_tmp = line_exists( gt_dd_plt_buf[ partyp = ls_idoc_ctrl_tmp-sndprt
+                                                parnum = ls_idoc_ctrl_tmp-sndprn
+                                                mestyp = ls_idoc_ctrl_tmp-mestyp
+                                                valid_to >= ls_head_tmp-pstng_date ] ).
+
+    " Process segments of this IDoc
+    LOOP AT idoc_data INTO DATA(ls_idoc_data_tmp) FROM sy-tabix.
+      IF ls_idoc_data_tmp-docnum <> ls_idoc_ctrl_tmp-docnum.
+        EXIT.
+      ENDIF.
+
+      CASE ls_idoc_data_tmp-segnam.
+        WHEN 'E1BP2017_GM_ITEM_CREATE'.
+          ls_item_tmp = ls_idoc_data_tmp-sdata.
+          IF lv_dd_map_tmp = abap_true.
+            " Transform material and plant for buffer collection
+            DATA(lv_mat_tmp) = CONV matnr( ls_item_tmp-material ).
+            cl_matnr_chk_mapper=>convert_on_input( EXPORTING iv_matnr18 = ls_item_tmp-material
+                                                   IMPORTING ev_matnr40 = lv_mat_tmp ).
+            ls_item_tmp-material = ycl_bc_idoc_functions=>map_material_rb_dd(
+                                      iv_partyp = ls_idoc_ctrl_tmp-sndprt
+                                      iv_parnum = ls_idoc_ctrl_tmp-sndprn
+                                      iv_mestyp = ls_idoc_ctrl_tmp-mestyp
+                                      iv_date   = CONV datum( ls_head_tmp-pstng_date )
+                                      iv_matnr_in = lv_mat_tmp ).
+            ls_item_tmp-plant = ycl_bc_idoc_functions=>map_plant_in(
+                                      iv_partyp = ls_idoc_ctrl_tmp-sndprt
+                                      iv_parnum = ls_idoc_ctrl_tmp-sndprn
+                                      iv_mestyp = ls_idoc_ctrl_tmp-mestyp
+                                      iv_date   = CONV datum( ls_head_tmp-pstng_date )
+                                      iv_werks_idoc = ls_item_tmp-plant ).
+            " Handle move_mat/plant mapping if needed for key collection
+            IF ls_item_tmp-move_mat IS NOT INITIAL.
+               lv_mat_tmp = CONV matnr( ls_item_tmp-move_mat ).
+               cl_matnr_chk_mapper=>convert_on_input( EXPORTING iv_matnr18 = ls_item_tmp-move_mat
+                                                      IMPORTING ev_matnr40 = lv_mat_tmp ).
+               ls_item_tmp-move_mat = ycl_bc_idoc_functions=>map_material_rb_dd(
+                                         iv_partyp = ls_idoc_ctrl_tmp-sndprt
+                                         iv_parnum = ls_idoc_ctrl_tmp-sndprn
+                                         iv_mestyp = ls_idoc_ctrl_tmp-mestyp
+                                         iv_date   = CONV datum( ls_head_tmp-pstng_date )
+                                         iv_matnr_in = lv_mat_tmp ).
+            ENDIF.
+            IF ls_item_tmp-move_plant IS NOT INITIAL.
+              ls_item_tmp-move_plant = ycl_bc_idoc_functions=>map_plant_in(
+                                         iv_partyp = ls_idoc_ctrl_tmp-sndprt
+                                         iv_parnum = ls_idoc_ctrl_tmp-sndprn
+                                         iv_mestyp = ls_idoc_ctrl_tmp-mestyp
+                                         iv_date   = CONV datum( ls_head_tmp-pstng_date )
+                                         iv_werks_idoc = ls_item_tmp-move_plant ).
+            ENDIF.
+          ENDIF.
+
+          IF ls_item_tmp-material IS NOT INITIAL.
+            INSERT VALUE #( matnr = ls_item_tmp-material ) INTO TABLE lt_mat_coll.
+            IF ls_item_tmp-plant IS NOT INITIAL.
+              INSERT VALUE #( matnr = ls_item_tmp-material werks = ls_item_tmp-plant ) INTO TABLE lt_mat_werks.
+              INSERT VALUE #( werks = ls_item_tmp-plant ) INTO TABLE lt_werks_coll.
+            ENDIF.
+          ENDIF.
+          IF ls_item_tmp-move_mat IS NOT INITIAL.
+            INSERT VALUE #( matnr = ls_item_tmp-move_mat ) INTO TABLE lt_mat_coll.
+            IF ls_item_tmp-move_plant IS NOT INITIAL.
+               INSERT VALUE #( matnr = ls_item_tmp-move_mat werks = ls_item_tmp-move_plant ) INTO TABLE lt_mat_werks.
+               INSERT VALUE #( werks = ls_item_tmp-move_plant ) INTO TABLE lt_werks_coll.
+            ENDIF.
+          ENDIF.
+          IF ls_item_tmp-po_number IS NOT INITIAL.
+            INSERT VALUE #( ebeln = ls_item_tmp-po_number ) INTO TABLE lt_ebeln_coll.
+            IF ls_item_tmp-po_item IS NOT INITIAL.
+               INSERT VALUE #( ebeln = ls_item_tmp-po_number ebelp = ls_item_tmp-po_item ) INTO TABLE lt_ebeln_ebelp_coll.
+            ENDIF.
+          ENDIF.
+          IF ls_item_tmp-deliv_numb_to_search IS NOT INITIAL.
+            INSERT VALUE #( vbeln = ls_item_tmp-deliv_numb_to_search ) INTO TABLE lt_vbeln_coll.
+          ENDIF.
+          IF ls_item_tmp-stge_loc IS NOT INITIAL AND ls_item_tmp-plant IS NOT INITIAL.
+             INSERT VALUE #( werks = ls_item_tmp-plant lgort = ls_item_tmp-stge_loc ) INTO TABLE lt_werks_lgort_coll.
+          ENDIF.
+          IF ls_item_tmp-move_type = '321'.
+            INSERT VALUE #( charg = ls_item_tmp-batch matnr = ls_item_tmp-material werkvorg = ls_item_tmp-plant lagortvorg = ls_item_tmp-stge_loc ) INTO TABLE lt_qals_coll.
+          ENDIF.
+      ENDCASE.
+    ENDLOOP.
+  ENDLOOP.
+
+  " --- Pre-fetch: Database Bulk Selection ---
+  IF lt_mat_coll IS NOT INITIAL.
+    SELECT matnr, labor, mtart, meins, xchpf FROM mara
+      INTO TABLE @DATA(lt_mara_tmp)
+      FOR ALL ENTRIES IN @lt_mat_coll
+      WHERE matnr = @lt_mat_coll-matnr.
+    LOOP AT lt_mara_tmp INTO DATA(ls_mara_tmp).
+      INSERT CORRESPONDING #( ls_mara_tmp ) INTO TABLE gt_mara_buf.
+    ENDLOOP.
+
+    SELECT * FROM y0pp_calc_rbfqty
+      INTO TABLE @DATA(lt_rbfqty_tmp)
+      FOR ALL ENTRIES IN @lt_mat_coll
+      WHERE matnr = @lt_mat_coll-matnr.
+    SORT lt_rbfqty_tmp BY matnr.
+    DELETE ADJACENT DUPLICATES FROM lt_rbfqty_tmp COMPARING matnr.
+    LOOP AT lt_rbfqty_tmp INTO DATA(ls_rbfqty_tmp).
+      INSERT ls_rbfqty_tmp INTO TABLE gt_rbfqty_buf.
+    ENDLOOP.
+  ENDIF.
+
+  IF lt_ebeln_coll IS NOT INITIAL.
+    " Standard PO Fetch
+    SELECT ebeln, bsart, lifnr, bedat FROM ekko
+      INTO TABLE @DATA(lt_ekko_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_coll
+      WHERE ebeln = @lt_ebeln_coll-ebeln.
+
+    " Better way: Two-step for tracking numbers
+    SELECT ebeln, ebelp, matnr, werks, bednr, afnam, loekz, elikz, bstyp, insmk, weora FROM ekpo
+      INTO TABLE @DATA(lt_ekpo_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_coll
+      WHERE ebeln = @lt_ebeln_coll-ebeln.
+
+    SELECT ebeln, ebelp, matnr, werks, bednr, afnam, loekz, elikz, bstyp, insmk, weora FROM ekpo
+      APPENDING TABLE @lt_ekpo_tmp
+      FOR ALL ENTRIES IN @lt_ebeln_coll
+      WHERE bednr = @lt_ebeln_coll-ebeln.
+
+    " Collect any missing PO headers
+    LOOP AT lt_ekpo_tmp INTO DATA(ls_ekpo_tmp_coll).
+      INSERT VALUE #( ebeln = ls_ekpo_tmp_coll-ebeln ) INTO TABLE lt_ebeln_coll.
+    ENDLOOP.
+
+    SELECT ebeln, bsart, lifnr, bedat FROM ekko
+      INTO TABLE @lt_ekko_tmp
+      FOR ALL ENTRIES IN @lt_ebeln_coll
+      WHERE ebeln = @lt_ebeln_coll-ebeln.
+
+    LOOP AT lt_ekko_tmp INTO DATA(ls_ekko_tmp).
+      INSERT CORRESPONDING #( ls_ekko_tmp ) INTO TABLE gt_ekko_buf.
+    ENDLOOP.
+
+    SORT lt_ekpo_tmp BY ebeln ebelp.
+    DELETE ADJACENT DUPLICATES FROM lt_ekpo_tmp COMPARING ebeln ebelp.
+    LOOP AT lt_ekpo_tmp INTO DATA(ls_ekpo_final).
+      INSERT CORRESPONDING #( ls_ekpo_final ) INTO TABLE gt_ekpo_buf.
+    ENDLOOP.
+
+    SELECT rsnum, plnum, bdter, matnr, bdmng, enmng, meins FROM resb
+      INTO TABLE @DATA(lt_resb_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_coll
+      WHERE ebeln = @lt_ebeln_coll-ebeln. " Wait, RESB doesn't have EBELN usually in standard, but maybe in this system?
+      " Original code uses EKET/EKES/EKBE for PO items.
+
+    SELECT ebeln, ebelp, etenr, wemng, menge FROM eket
+      INTO TABLE @DATA(lt_eket_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_ebelp_coll
+      WHERE ebeln = @lt_ebeln_ebelp_coll-ebeln
+        AND ebelp = @lt_ebeln_ebelp_coll-ebelp.
+    LOOP AT lt_eket_tmp INTO DATA(ls_eket_tmp).
+      INSERT CORRESPONDING #( ls_eket_tmp ) INTO TABLE gt_eket_buf.
+    ENDLOOP.
+
+    SELECT ebeln, ebelp, etens, charg, vbeln, vbelp, loekz, dabmg, menge FROM ekes
+      INTO TABLE @DATA(lt_ekes_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_ebelp_coll
+      WHERE ebeln = @lt_ebeln_ebelp_coll-ebeln
+        AND ebelp = @lt_ebeln_ebelp_coll-ebelp.
+    LOOP AT lt_ekes_tmp INTO DATA(ls_ekes_tmp).
+      INSERT CORRESPONDING #( ls_ekes_tmp ) INTO TABLE gt_ekes_buf.
+      IF ls_ekes_tmp-vbeln IS NOT INITIAL.
+        INSERT VALUE #( vbeln = ls_ekes_tmp-vbeln ) INTO TABLE lt_vbeln_coll.
+      ENDIF.
+    ENDLOOP.
+
+    SELECT ebeln, ebelp, vgabe, gjahr, belnr, buzei, matnr, werks, xblnr, menge, shkzg, lfgja, lfbnr, lfpos, bamng, bwart FROM ekbe
+      INTO TABLE @DATA(lt_ekbe_tmp)
+      FOR ALL ENTRIES IN @lt_ebeln_ebelp_coll
+      WHERE ebeln = @lt_ebeln_ebelp_coll-ebeln
+        AND ebelp = @lt_ebeln_ebelp_coll-ebelp.
+    LOOP AT lt_ekbe_tmp INTO DATA(ls_ekbe_tmp).
+      INSERT CORRESPONDING #( ls_ekbe_tmp ) INTO TABLE gt_ekbe_buf.
+    ENDLOOP.
+  ENDIF.
+
+  IF lt_vbeln_coll IS NOT INITIAL.
+    SELECT vbeln, lfart, vbtyp, pkstk FROM likp
+      INTO TABLE @DATA(lt_likp_tmp)
+      FOR ALL ENTRIES IN @lt_vbeln_coll
+      WHERE vbeln = @lt_vbeln_coll-vbeln.
+    LOOP AT lt_likp_tmp INTO DATA(ls_likp_tmp).
+      INSERT CORRESPONDING #( ls_likp_tmp ) INTO TABLE gt_likp_buf.
+    ENDLOOP.
+
+    SELECT vbeln, posnr, werks, lgort, uecha, matnr, charg, meins, vrkme, vgbel, vgpos, wbsta FROM lips
+      INTO TABLE @DATA(lt_lips_tmp)
+      FOR ALL ENTRIES IN @lt_vbeln_coll
+      WHERE vbeln = @lt_vbeln_coll-vbeln.
+    LOOP AT lt_lips_tmp INTO DATA(ls_lips_tmp).
+      INSERT CORRESPONDING #( ls_lips_tmp ) INTO TABLE gt_lips_buf.
+    ENDLOOP.
+  ENDIF.
+
+  IF lt_mat_werks IS NOT INITIAL.
+    SELECT matnr, bwkey, peinh, bwprs FROM mbew
+      INTO TABLE @DATA(lt_mbew_tmp)
+      FOR ALL ENTRIES IN @lt_mat_werks
+      WHERE matnr = @lt_mat_werks-matnr
+        AND bwkey = @lt_mat_werks-werks.
+    LOOP AT lt_mbew_tmp INTO DATA(ls_mbew_tmp).
+      INSERT CORRESPONDING #( ls_mbew_tmp ) INTO TABLE gt_mbew_buf.
+    ENDLOOP.
+  ENDIF.
+
+  IF lt_werks_coll IS NOT INITIAL.
+    SELECT werks, bwkey FROM t001w
+      INTO TABLE @DATA(lt_t001w_tmp)
+      FOR ALL ENTRIES IN @lt_werks_coll
+      WHERE werks = @lt_werks_coll-werks.
+    LOOP AT lt_t001w_tmp INTO DATA(ls_t001w_tmp).
+      INSERT CORRESPONDING #( ls_t001w_tmp ) INTO TABLE gt_t001w_buf.
+      INSERT VALUE #( bwkey = ls_t001w_tmp-bwkey ) INTO TABLE lt_bwkey_coll.
+    ENDLOOP.
+
+    IF lt_bwkey_coll IS NOT INITIAL.
+      SELECT bwkey, bukrs FROM t001k
+        INTO TABLE @DATA(lt_t001k_tmp)
+        FOR ALL ENTRIES IN @lt_bwkey_coll
+        WHERE bwkey = @lt_bwkey_coll-bwkey.
+      LOOP AT lt_t001k_tmp INTO DATA(ls_t001k_tmp).
+        INSERT CORRESPONDING #( ls_t001k_tmp ) INTO TABLE gt_t001k_buf.
+      ENDLOOP.
+    ENDIF.
+  ENDIF.
+
+  " Pre-fetch T156 (Movement Types)
+  SELECT bwart, shkzg FROM t156 INTO TABLE @DATA(lt_t156_tmp).
+  LOOP AT lt_t156_tmp INTO DATA(ls_t156_tmp).
+    INSERT CORRESPONDING #( ls_t156_tmp ) INTO TABLE gt_t156_buf.
+  ENDLOOP.
+
+  IF lt_qals_coll IS NOT INITIAL.
+    SELECT prueflos, werk, charg, matnr, werkvorg, lagortvorg FROM qals
+      INTO TABLE @DATA(lt_qals_tmp)
+      FOR ALL ENTRIES IN @lt_qals_coll
+      WHERE charg = @lt_qals_coll-charg
+        AND matnr = @lt_qals_coll-matnr
+        AND werkvorg = @lt_qals_coll-werkvorg
+        AND lagortvorg = @lt_qals_coll-lagortvorg.
+    LOOP AT lt_qals_tmp INTO DATA(ls_qals_tmp).
+      INSERT CORRESPONDING #( ls_qals_tmp ) INTO TABLE gt_qals_buf.
+    ENDLOOP.
+  ENDIF.
+
+  IF lt_werks_lgort_coll IS NOT INITIAL.
+    SELECT werks, lgort, xhupf FROM t001l
+      INTO TABLE @DATA(lt_t001l_tmp)
+      FOR ALL ENTRIES IN @lt_werks_lgort_coll
+      WHERE werks = @lt_werks_lgort_coll-werks
+        AND lgort = @lt_werks_lgort_coll-lgort.
+    LOOP AT lt_t001l_tmp INTO DATA(ls_t001l_tmp).
+      INSERT CORRESPONDING #( ls_t001l_tmp ) INTO TABLE gt_t001l_buf.
+    ENDLOOP.
+  ENDIF.
 
 * go through all IDocs                                                 *
-  LOOP AT idoc_contrl.
+  DATA(lv_idoc_idx) = 1.
+  LOOP AT idoc_contrl INTO DATA(ls_idoc_ctrl).
 *   select segments belonging to one IDoc                              *
     REFRESH t_edidd.
-    LOOP AT idoc_data WHERE docnum = idoc_contrl-docnum.
-      APPEND idoc_data TO t_edidd.
+    LOOP AT idoc_data INTO DATA(ls_idoc_data) FROM lv_idoc_idx.
+      IF ls_idoc_data-docnum <> ls_idoc_ctrl-docnum.
+        lv_idoc_idx = sy-tabix.
+        EXIT.
+      ENDIF.
+      APPEND ls_idoc_data TO t_edidd.
     ENDLOOP.
 
 *   initialize data
@@ -205,10 +728,16 @@ FUNCTION za_idoc_input_mbgmcr
              it_ekes.
 
 *   unlock previos po's
-    LOOP AT it_lock.
-      DELETE FROM y0mm_proc_ebeln WHERE ebeln = it_lock-ebeln.
+    IF it_lock[] IS NOT INITIAL.
+      DATA: lt_unlock TYPE TABLE OF y0mm_proc_ebeln.
+      LOOP AT it_lock INTO DATA(ls_unlock).
+        APPEND VALUE #( ebeln = ls_unlock-ebeln ) TO lt_unlock.
+      ENDLOOP.
+      DELETE y0mm_proc_ebeln FROM TABLE @lt_unlock.
       COMMIT WORK.
-    ENDLOOP.
+      REFRESH it_lock.
+    ENDIF.
+
 *   through all segments of this IDoc                                  *
     CLEAR error_flag.
     REFRESH bapi_retn_info.
@@ -216,15 +745,15 @@ FUNCTION za_idoc_input_mbgmcr
 
       " Check if plant/DD mapping is necessary
       CLEAR: lv_dd_map, ls_gm_head_check.
-      READ TABLE t_edidd INTO idoc_data WITH KEY segnam = 'E1BP2017_GM_HEAD_01'.
+      READ TABLE t_edidd INTO DATA(ls_gm_head_seg) WITH KEY segnam = 'E1BP2017_GM_HEAD_01'.
       IF sy-subrc = 0.
-        ls_gm_head_check = idoc_data-sdata.
+        ls_gm_head_check = ls_gm_head_seg-sdata.
       ENDIF.
-      SELECT SINGLE @abap_true FROM y0bc_idoc_dd_plt WHERE partyp = @idoc_contrl-sndprt
-                                                       AND parnum = @idoc_contrl-sndprn
-                                                       AND mestyp = @idoc_contrl-mestyp
-                                                       AND valid_to >= @ls_gm_head_check-pstng_date
-                                                     INTO @lv_dd_map.
+      lv_dd_map = line_exists( gt_dd_plt_buf[ partyp = ls_idoc_ctrl-sndprt
+                                              parnum = ls_idoc_ctrl-sndprn
+                                              mestyp = ls_idoc_ctrl-mestyp
+                                              valid_to >= ls_gm_head_check-pstng_date ] ).
+
       LOOP AT t_edidd INTO idoc_data.
 
         CASE idoc_data-segnam.
@@ -266,16 +795,16 @@ FUNCTION za_idoc_input_mbgmcr
               cl_matnr_chk_mapper=>convert_on_input( EXPORTING iv_matnr18 = e1bp2017_gm_item_create-material
                                                      IMPORTING ev_matnr40 = lv_matnr ).
 
-              e1bp2017_gm_item_create-material = ycl_bc_idoc_functions=>map_material_rb_dd( EXPORTING iv_partyp = idoc_contrl-sndprt "#EC CI_FLDEXT_OK[2215424]
-                                                                                                      iv_parnum = idoc_contrl-sndprn
-                                                                                                      iv_mestyp = idoc_contrl-mestyp
+        e1bp2017_gm_item_create-material = ycl_bc_idoc_functions=>map_material_rb_dd( EXPORTING iv_partyp = ls_idoc_ctrl-sndprt "#EC CI_FLDEXT_OK[2215424]
+                                                                                                iv_parnum = ls_idoc_ctrl-sndprn
+                                                                                                iv_mestyp = ls_idoc_ctrl-mestyp
                                                                                                       iv_date = CONV datum( ls_gm_head_check-pstng_date )
                                                                                                       iv_matnr_in = lv_matnr ).
 
               " Plants might be relevant for mapping
-              e1bp2017_gm_item_create-plant = ycl_bc_idoc_functions=>map_plant_in( EXPORTING iv_partyp = idoc_contrl-sndprt
-                                                                                             iv_parnum = idoc_contrl-sndprn
-                                                                                             iv_mestyp = idoc_contrl-mestyp
+        e1bp2017_gm_item_create-plant = ycl_bc_idoc_functions=>map_plant_in( EXPORTING iv_partyp = ls_idoc_ctrl-sndprt
+                                                                                       iv_parnum = ls_idoc_ctrl-sndprn
+                                                                                       iv_mestyp = ls_idoc_ctrl-mestyp
                                                                                              iv_date = CONV datum( ls_gm_head_check-pstng_date )
                                                                                              iv_werks_idoc = e1bp2017_gm_item_create-plant ).
 
@@ -284,17 +813,17 @@ FUNCTION za_idoc_input_mbgmcr
                 cl_matnr_chk_mapper=>convert_on_input( EXPORTING iv_matnr18 = e1bp2017_gm_item_create-move_mat
                                                        IMPORTING ev_matnr40 = lv_matnr ).
 
-                e1bp2017_gm_item_create-move_mat = ycl_bc_idoc_functions=>map_material_rb_dd( EXPORTING iv_partyp = idoc_contrl-sndprt "#EC CI_FLDEXT_OK[2215424]
-                                                                                                        iv_parnum = idoc_contrl-sndprn
-                                                                                                        iv_mestyp = idoc_contrl-mestyp
+          e1bp2017_gm_item_create-move_mat = ycl_bc_idoc_functions=>map_material_rb_dd( EXPORTING iv_partyp = ls_idoc_ctrl-sndprt "#EC CI_FLDEXT_OK[2215424]
+                                                                                                  iv_parnum = ls_idoc_ctrl-sndprn
+                                                                                                  iv_mestyp = ls_idoc_ctrl-mestyp
                                                                                                         iv_date = CONV datum( ls_gm_head_check-pstng_date )
                                                                                                         iv_matnr_in = lv_matnr ).
               ENDIF.
 
               IF e1bp2017_gm_item_create-move_plant IS NOT INITIAL.
-                e1bp2017_gm_item_create-move_plant = ycl_bc_idoc_functions=>map_plant_in( EXPORTING iv_partyp = idoc_contrl-sndprt
-                                                                                                    iv_parnum = idoc_contrl-sndprn
-                                                                                                    iv_mestyp = idoc_contrl-mestyp
+          e1bp2017_gm_item_create-move_plant = ycl_bc_idoc_functions=>map_plant_in( EXPORTING iv_partyp = ls_idoc_ctrl-sndprt
+                                                                                              iv_parnum = ls_idoc_ctrl-sndprn
+                                                                                              iv_mestyp = ls_idoc_ctrl-mestyp
                                                                                                     iv_date = CONV datum( ls_gm_head_check-pstng_date )
                                                                                                     iv_werks_idoc = e1bp2017_gm_item_create-move_plant ).
               ENDIF.
@@ -305,12 +834,12 @@ FUNCTION za_idoc_input_mbgmcr
                             TO goodsmvt_item.
 
             "ERPMM-2668
-            lt_items = VALUE #( BASE lt_items ( e1bp2017_gm_item_create ) ).
+      " Performance Standard: Use APPEND instead of VALUE #( BASE ... ) in loop
+      APPEND e1bp2017_gm_item_create TO lt_items.
 
             "For BI data transfer
             IF goodsmvt_item-deliv_numb_to_search IS NOT INITIAL.
-              SELECT SINGLE vbtyp INTO @DATA(l_vbtyp_bi)
-                     FROM likp WHERE vbeln = @goodsmvt_item-deliv_numb_to_search.
+        DATA(l_vbtyp_bi) = VALUE #( gt_likp_buf[ vbeln = goodsmvt_item-deliv_numb_to_search ]-vbtyp OPTIONAL ).
               IF l_vbtyp_bi NE '7'.
                 goodsmvt_item-deliv_numb = goodsmvt_item-deliv_numb_to_search.
                 goodsmvt_item-deliv_item = goodsmvt_item-deliv_item_to_search.
@@ -329,10 +858,7 @@ FUNCTION za_idoc_input_mbgmcr
             ENDIF.
 
 *         convert material number - if partner system needs it
-            CLEAR y0mm_gm_matnrcnv.
-            SELECT SINGLE * FROM y0mm_gm_matnrcnv
-                           WHERE sndprn = idoc_contrl-sndprn.
-            IF sy-subrc = 0.
+            IF line_exists( gt_matnrcnv_buf[ sndprn = ls_idoc_ctrl-sndprn ] ).
               CALL FUNCTION 'Y_0CA_PARTNER_CONVERT_MATNR'
                 EXPORTING
                   matnr_in                = goodsmvt_item-material
@@ -359,7 +885,7 @@ FUNCTION za_idoc_input_mbgmcr
                        TABLES t_edidd
                               idoc_status
                               return_variables
-                        USING idoc_contrl
+                        USING ls_idoc_ctrl
                               bapi_retn_info
                               bapi_idoc_status
                               workflow_result.
@@ -392,7 +918,7 @@ FUNCTION za_idoc_input_mbgmcr
                        TABLES t_edidd
                               idoc_status
                               return_variables
-                        USING idoc_contrl
+                        USING ls_idoc_ctrl
                               bapi_retn_info
                               bapi_idoc_status
                               workflow_result.
@@ -401,24 +927,19 @@ FUNCTION za_idoc_input_mbgmcr
             ENDIF.
 
 *         recalculate quantites
-            SELECT * FROM y0pp_calc_rbfqty UP TO 1 ROWS
-                    WHERE matnr = goodsmvt_item-material.
-            ENDSELECT.
+            ASSIGN gt_rbfqty_buf[ matnr = goodsmvt_item-material ] TO FIELD-SYMBOL(<ls_rbfqty>).
             IF sy-subrc = 0.
 *            recalculate quantity for PO Create
-              LOOP AT t_edidd INTO wa_edidd WHERE segnam = 'Z1BP2017'.
-                z1bp2017 = wa_edidd-sdata.
+              LOOP AT t_edidd ASSIGNING FIELD-SYMBOL(<ls_edidd_z1>) WHERE segnam = 'Z1BP2017'.
+                z1bp2017 = <ls_edidd_z1>-sdata.
                 CHECK z1bp2017-zbaret  = 'X' AND
                       z1bp2017-zbquan  = goodsmvt_item-entry_qnt AND
                       z1bp2017-zbmeins = goodsmvt_item-entry_uom.
-                z1bp2017-zbquan = z1bp2017-zbquan *
-                                  y0pp_calc_rbfqty-faktr.
-                wa_edidd-sdata = z1bp2017.
-                MODIFY t_edidd FROM wa_edidd.
+                z1bp2017-zbquan = z1bp2017-zbquan * <ls_rbfqty>-faktr.
+                <ls_edidd_z1>-sdata = z1bp2017.
               ENDLOOP.
 *            recalculate item quantity
-              goodsmvt_item-entry_qnt = goodsmvt_item-entry_qnt *
-                                        y0pp_calc_rbfqty-faktr.
+              goodsmvt_item-entry_qnt = goodsmvt_item-entry_qnt * <ls_rbfqty>-faktr.
             ENDIF.
 
 *         convert vendor number
@@ -428,21 +949,19 @@ FUNCTION za_idoc_input_mbgmcr
               IMPORTING
                 output = goodsmvt_item-vendor.
 
-            SELECT SINGLE * FROM y0mm_gm_lifnrcnv
-                           WHERE sndprn    = idoc_contrl-sndprn
-                             AND lifnr_ext = goodsmvt_item-vendor.
-            IF sy-subrc = 0.
-              goodsmvt_item-vendor = y0mm_gm_lifnrcnv-lifnr.
+            DATA(lv_lifnr_new) = VALUE #( gt_lifnrcnv_buf[ sndprn = ls_idoc_ctrl-sndprn lifnr_ext = goodsmvt_item-vendor ]-lifnr OPTIONAL ).
+            IF lv_lifnr_new IS NOT INITIAL.
+              goodsmvt_item-vendor = lv_lifnr_new.
             ENDIF.
 
             "Plausibility check on reference number
             DATA(l_valid) = abap_true.
             IF goodsmvt_code EQ '01'.
-              LOOP AT gt_mbgmcr_chk INTO DATA(ls_mbgmcr_chk) WHERE mestyp = idoc_contrl-mestyp
+              LOOP AT gt_mbgmcr_chk INTO DATA(ls_mbgmcr_chk) WHERE mestyp = ls_idoc_ctrl-mestyp
                                                                AND lifnr  = goodsmvt_item-vendor
                                                                AND werks  = e1bp2017_gm_item_create-plant
                                                                AND datab  =< sy-datum.
-                IF idoc_contrl-sndprn CP ls_mbgmcr_chk-sndprn.
+                IF ls_idoc_ctrl-sndprn CP ls_mbgmcr_chk-sndprn.
                   DATA(l_ref_doc_no) = |{ goodsmvt_header-ref_doc_no WIDTH = 16 ALPHA = IN }|.
 
                   IF l_ref_doc_no BETWEEN ls_mbgmcr_chk-fromnumber AND ls_mbgmcr_chk-tonumber.
@@ -499,140 +1018,110 @@ FUNCTION za_idoc_input_mbgmcr
 *         Goods receipt has to be posted to delivery, not to PO.
 *         In case of YIDV delivery - get PO number if not included in Idoc
             IF goodsmvt_item-po_number IS INITIAL.
-              IF idoc_contrl-sndprn = 'ATCPSYS' OR idoc_contrl-sndprn = 'DEPVSFASH'.
-                SELECT SINGLE vgbel vgpos FROM lips
-                       INTO (goodsmvt_item-po_number, goodsmvt_item-po_item)
-                       WHERE vbeln = goodsmvt_item-deliv_numb_to_search
-                         AND posnr = goodsmvt_item-deliv_item_to_search.
+              IF ls_idoc_ctrl-sndprn = 'ATCPSYS' OR ls_idoc_ctrl-sndprn = 'DEPVSFASH'.
+                ASSIGN gt_lips_buf[ vbeln = goodsmvt_item-deliv_numb_to_search posnr = goodsmvt_item-deliv_item_to_search ] TO FIELD-SYMBOL(<ls_lips_ref>).
+                IF sy-subrc = 0.
+                  goodsmvt_item-po_number = <ls_lips_ref>-vgbel.
+                  goodsmvt_item-po_item   = <ls_lips_ref>-vgpos.
+                ENDIF.
               ELSE.
-                SELECT SINGLE lfart FROM likp INTO hi_lfart
-                       WHERE vbeln = goodsmvt_item-deliv_numb_to_search
-                         AND lfart = co_lfart_yidv.
-
-                IF sy-subrc IS INITIAL.
-                  SELECT SINGLE vgbel vgpos FROM lips
-                         INTO (goodsmvt_item-po_number, goodsmvt_item-po_item)
-                         WHERE vbeln = goodsmvt_item-deliv_numb_to_search
-                           AND posnr = goodsmvt_item-deliv_item_to_search.
+                DATA(lv_lfart) = VALUE #( gt_likp_buf[ vbeln = goodsmvt_item-deliv_numb_to_search ]-lfart OPTIONAL ).
+                IF lv_lfart = co_lfart_yidv.
+                  ASSIGN gt_lips_buf[ vbeln = goodsmvt_item-deliv_numb_to_search posnr = goodsmvt_item-deliv_item_to_search ] TO <ls_lips_ref>.
+                  IF sy-subrc = 0.
+                    goodsmvt_item-po_number = <ls_lips_ref>-vgbel.
+                    goodsmvt_item-po_item   = <ls_lips_ref>-vgpos.
+                  ENDIF.
                 ENDIF.
               ENDIF.
             ENDIF.
 
-            CLEAR hi_weora.
-            SELECT SINGLE weora FROM ekpo INTO hi_weora WHERE ebeln = goodsmvt_item-po_number
-                                                          AND ebelp = goodsmvt_item-po_item
-                                                          AND weora = 'X'.
-            IF sy-subrc IS INITIAL.
+            hi_weora = VALUE #( gt_ekpo_buf[ ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item ]-weora OPTIONAL ).
+            IF hi_weora = 'X'.
               IF goodsmvt_item-move_type EQ '101'.
                 IF goodsmvt_item-deliv_numb_to_search IS INITIAL.
-                  SELECT SINGLE vbeln vbelp FROM ekes
-                                INTO (goodsmvt_item-deliv_numb_to_search, goodsmvt_item-deliv_item_to_search)
-                                WHERE ebeln = goodsmvt_item-po_number
-                                  AND ebelp = goodsmvt_item-po_item
-                                  AND charg = goodsmvt_item-batch.
+                  ASSIGN gt_ekes_buf[ KEY k_charg COMPONENTS ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item charg = goodsmvt_item-batch ] TO FIELD-SYMBOL(<ls_ekes_ref>).
+                  IF sy-subrc = 0.
+                    goodsmvt_item-deliv_numb_to_search = <ls_ekes_ref>-vbeln.
+                    goodsmvt_item-deliv_item_to_search = <ls_ekes_ref>-vbelp.
+                  ENDIF.
                 ENDIF.
 **/ ATX-KEMMING Begin
 *                IF sy-subrc IS INITIAL.
 *                  CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
 *                  goodsmvt_item-move_type = '109'.
 *                ENDIF.
-                IF sy-subrc IS INITIAL AND NOT goodsmvt_item-deliv_numb_to_search IS INITIAL.
-                  IF NOT idoc_contrl-sndprn = 'ATCPSYS' AND NOT idoc_contrl-sndprn = 'DEPVSFASH'.
-                    SELECT SINGLE spe_inb_vl_mm FROM tvshp INTO @DATA(lv_spe_inb_vl_mm).
-
-                    IF NOT lv_spe_inb_vl_mm EQ abap_true.
+                IF goodsmvt_item-deliv_numb_to_search IS NOT INITIAL.
+                  IF ls_idoc_ctrl-sndprn <> 'ATCPSYS' AND ls_idoc_ctrl-sndprn <> 'DEPVSFASH'.
+                    IF gv_spe_inb_vl_mm <> abap_true.
                       CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
                     ENDIF.
                   ENDIF.
                   goodsmvt_item-move_type = '109'.
                 ELSE.
-                  SELECT SINGLE vbeln vbelp FROM ekes
-                                INTO (goodsmvt_item-deliv_numb_to_search, goodsmvt_item-deliv_item_to_search)
-                                WHERE ebeln = goodsmvt_item-po_number
-                                  AND ebelp = goodsmvt_item-po_item
-                                  AND charg = goodsmvt_item-batch
-                                  AND vbeln NE space. "This should be the inbound delivery
-                  IF sy-subrc IS INITIAL.
+                  ASSIGN gt_ekes_buf[ KEY k_charg COMPONENTS ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item charg = goodsmvt_item-batch ] TO <ls_ekes_ref>.
+                  IF sy-subrc = 0 AND <ls_ekes_ref>-vbeln IS NOT INITIAL.
+                    goodsmvt_item-deliv_numb_to_search = <ls_ekes_ref>-vbeln.
+                    goodsmvt_item-deliv_item_to_search = <ls_ekes_ref>-vbelp.
                     CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
                     goodsmvt_item-move_type = '109'.
                   ENDIF.
                 ENDIF.
 **/ ATX-KEMMING End
               ELSEIF goodsmvt_item-move_type EQ '102'.
-                SELECT SINGLE vbeln vbelp FROM ekes
-                          INTO (goodsmvt_item-deliv_numb_to_search, goodsmvt_item-deliv_item_to_search)
-                          WHERE ebeln = goodsmvt_item-po_number
-                            AND ebelp = goodsmvt_item-po_item
-                            AND charg = goodsmvt_item-batch.
+                IF goodsmvt_item-deliv_numb_to_search IS INITIAL.
+                   ASSIGN gt_ekes_buf[ KEY k_charg COMPONENTS ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item charg = goodsmvt_item-batch ] TO <ls_ekes_ref>.
+                   IF sy-subrc = 0.
+                     goodsmvt_item-deliv_numb_to_search = <ls_ekes_ref>-vbeln.
+                     goodsmvt_item-deliv_item_to_search = <ls_ekes_ref>-vbelp.
+                   ENDIF.
+                ENDIF.
 **/ ATX-KEMMING Begin
-*                IF sy-subrc IS INITIAL.
-*                  CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
-*                  goodsmvt_item-move_type = '110'.
-*                ENDIF.
-                IF sy-subrc IS INITIAL AND NOT goodsmvt_item-deliv_numb_to_search IS INITIAL.
+                IF goodsmvt_item-deliv_numb_to_search IS NOT INITIAL.
                   CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
                   goodsmvt_item-move_type = '110'.
                 ELSE.
-                  SELECT SINGLE vbeln vbelp FROM ekes
-                                INTO (goodsmvt_item-deliv_numb_to_search, goodsmvt_item-deliv_item_to_search)
-                                WHERE ebeln = goodsmvt_item-po_number
-                                  AND ebelp = goodsmvt_item-po_item
-                                  AND charg = goodsmvt_item-batch
-                                  AND vbeln NE space. "This should be the inbound delivery
-                  IF sy-subrc IS INITIAL.
-                    CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
-                    goodsmvt_item-move_type = '110'.
-                  ENDIF.
+                   ASSIGN gt_ekes_buf[ KEY k_charg COMPONENTS ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item charg = goodsmvt_item-batch ] TO <ls_ekes_ref>.
+                   IF sy-subrc = 0 AND <ls_ekes_ref>-vbeln IS NOT INITIAL.
+                     goodsmvt_item-deliv_numb_to_search = <ls_ekes_ref>-vbeln.
+                     goodsmvt_item-deliv_item_to_search = <ls_ekes_ref>-vbelp.
+                     CLEAR: goodsmvt_item-po_number, goodsmvt_item-po_item.
+                     goodsmvt_item-move_type = '110'.
+                   ENDIF.
                 ENDIF.
 **/ ATX-KEMMING End
               ENDIF.
             ENDIF.
 
 *         change movementy type due to customizing table
-            CLEAR it_bwart_po.
-            READ TABLE it_bwart_po
-                       WITH KEY bwart = goodsmvt_item-move_type.
-            IF sy-subrc = 0.
-              goodsmvt_item-move_type = it_bwart_po-bwart_new.
+            DATA(ls_bwart_po) = VALUE #( gt_bwart_po_buf[ bwart = goodsmvt_item-move_type ] OPTIONAL ).
+            IF ls_bwart_po-bwart_new IS NOT INITIAL.
+              goodsmvt_item-move_type = ls_bwart_po-bwart_new.
             ENDIF.
 
 * PAU-RG    Neuber Asia Process -> find stock transfer PO in case of ZRM
-*           find via tracking number and requisitioner
-*           Step 1: check doc.type of PO, Hard coded ZRM
-*                   only one occurence, main.view. would be overkill
-            CLEAR: hi_bsart.
-            SELECT SINGLE bsart FROM ekko INTO hi_bsart
-                               WHERE ebeln = goodsmvt_item-po_number.
+            hi_bsart = VALUE #( gt_ekko_buf[ ebeln = goodsmvt_item-po_number ]-bsart OPTIONAL ).
             IF hi_bsart = 'ZRM'.
-*              Step 2: Get ZRU PO Items via Tracking Number
-              REFRESH it_ekpo.
-              SELECT ebeln ebelp bednr afnam FROM ekpo
-                                  INTO TABLE it_ekpo
-                                 WHERE bednr = goodsmvt_item-po_number.
-*              Step 3: Search with requisitioner
-*                      loop where clause disregards leading zero
-*                      diffenc problem of the select statement
-              LOOP AT it_ekpo WHERE afnam = goodsmvt_item-po_item.
-                EXIT.
+              " Step 2 & 3: Find via tracking number (bednr) and requisitioner (afnam)
+              " requisitioner is in po_item
+              LOOP AT gt_ekpo_buf INTO DATA(ls_ekpo_zrm) USING KEY k_bednr WHERE bednr = goodsmvt_item-po_number.
+                IF ls_ekpo_zrm-afnam = goodsmvt_item-po_item.
+                   goodsmvt_item-po_number = ls_ekpo_zrm-ebeln.
+                   goodsmvt_item-po_item   = ls_ekpo_zrm-ebelp.
+                   EXIT.
+                ENDIF.
               ENDLOOP.
-              IF sy-subrc = 0.
-                goodsmvt_item-po_number = it_ekpo-ebeln.
-                goodsmvt_item-po_item   = it_ekpo-ebelp.
-              ENDIF.
             ENDIF.
 
 * PAU-TP Beg Call transaction for VL32N aDDED "$TP220206
 * POS inbound delivery
             IF NOT goodsmvt_item-deliv_numb_to_search IS INITIAL.
-              SELECT SINGLE mtart FROM mara
-                                INTO gf_mtart
-                               WHERE matnr = goodsmvt_item-material.
+              gf_mtart = VALUE #( gt_mara_buf[ matnr = goodsmvt_item-material ]-mtart OPTIONAL ).
+              likp-lfart = VALUE #( gt_likp_buf[ vbeln = goodsmvt_item-deliv_numb_to_search ]-lfart OPTIONAL ).
+              likp-vbtyp = VALUE #( gt_likp_buf[ vbeln = goodsmvt_item-deliv_numb_to_search ]-vbtyp OPTIONAL ).
 
-              SELECT SINGLE lfart FROM likp INTO likp-lfart"vbtyp (likp-lfart, likp-vbtyp)
-                                 WHERE vbeln EQ
-                                goodsmvt_item-deliv_numb_to_search .
-              READ TABLE it_y0mm_inbounddeli
-                          WITH KEY zndprn  = idoc_contrl-sndprn
+              READ TABLE gt_inbounddeli_buf
+                          WITH KEY zndprn  = ls_idoc_ctrl-sndprn
                                     lfart  = likp-lfart
                                     bwart  = goodsmvt_item-move_type
                                     mtart  = gf_mtart.
@@ -661,89 +1150,65 @@ FUNCTION za_idoc_input_mbgmcr
 * fields, therefor table EKBE (history of purchase doc.) must be read
 * to get the data.
             IF gf_inbound_del_flag NE 'X'.                  "$TP220206
-              SELECT SINGLE * FROM t156 INTO t156
-                     WHERE bwart EQ goodsmvt_item-move_type.
+              t156-shkzg = VALUE #( gt_t156_buf[ bwart = goodsmvt_item-move_type ]-shkzg OPTIONAL ).
               IF t156-shkzg EQ 'H'.
+                " Find original GR in buffer
+                LOOP AT gt_ekbe_buf INTO wa_ekbe USING KEY k_ref
+                  WHERE ebeln = goodsmvt_item-po_number
+                    AND ebelp = goodsmvt_item-po_item
+                    AND matnr = goodsmvt_item-material
+                    AND werks = goodsmvt_item-plant
+                    AND xblnr = goodsmvt_header-ref_doc_no.
 
-                CLEAR wa_ekbe.
-                SELECT gjahr belnr buzei lfgja lfbnr lfpos shkzg FROM ekbe
-                                      INTO CORRESPONDING FIELDS OF wa_ekbe
-                                    WHERE ebeln EQ goodsmvt_item-po_number
-                                        AND ebelp EQ goodsmvt_item-po_item
-                                       AND matnr EQ goodsmvt_item-material
-                                          AND werks EQ goodsmvt_item-plant
-                                   AND xblnr EQ goodsmvt_header-ref_doc_no
-                                      AND menge EQ goodsmvt_item-entry_qnt
-                                                          AND shkzg EQ 'S'
-                                                          AND vgabe EQ '1'.
-
-                  IF wa_ekbe-shkzg EQ 'S'.
-                    SELECT SINGLE belnr buzei shkzg FROM ekbe
-                           INTO CORRESPONDING FIELDS OF ekbe
-                             WHERE ebeln EQ goodsmvt_item-po_number
-                               AND ebelp EQ goodsmvt_item-po_item
-                               AND matnr EQ goodsmvt_item-material
-                               AND werks EQ goodsmvt_item-plant
-* 12-73618                               AND xblnr EQ goodsmvt_header-ref_doc_no
-                               AND menge EQ goodsmvt_item-entry_qnt
-                               AND lfgja EQ wa_ekbe-lfgja   "12-73618
-                               AND lfbnr EQ wa_ekbe-lfbnr
-                               AND lfpos EQ wa_ekbe-lfpos
-                               AND shkzg EQ 'H'
-                               AND vgabe EQ '1'.
-
-                    IF NOT sy-subrc IS INITIAL.
-                      goodsmvt_item-ref_doc_yr = wa_ekbe-lfgja.
-                      goodsmvt_item-ref_doc    = wa_ekbe-lfbnr.
-                      goodsmvt_item-ref_doc_it = wa_ekbe-lfpos.
-                    ENDIF.
-                  ENDIF.
-                ENDSELECT.
-*   IF no entry in EKBE is found, check on part delivery
-* 12-73618               IF NOT sy-subrc IS INITIAL.
-                IF goodsmvt_item-ref_doc IS INITIAL.        "12-73618
-                  CLEAR wa_ekbe.
-*    Search for PO with gt quantity
-                  SELECT gjahr belnr buzei lfgja lfbnr lfpos shkzg menge
-                                        FROM ekbe
-                                        INTO CORRESPONDING FIELDS OF wa_ekbe
-                                      WHERE ebeln EQ goodsmvt_item-po_number
-                                          AND ebelp EQ goodsmvt_item-po_item
-                                         AND matnr EQ goodsmvt_item-material
-                                            AND werks EQ goodsmvt_item-plant
-                                     AND xblnr EQ goodsmvt_header-ref_doc_no
-                                        AND menge GT goodsmvt_item-entry_qnt
-                                                            AND shkzg EQ 'S'
-                                                            AND vgabe EQ '1'.
-*    Get all cancellations
-*                 IF wa_ekbe-shkzg EQ 'S'.
-                    SELECT belnr buzei shkzg menge FROM ekbe
-                           INTO CORRESPONDING FIELDS OF ekbe
-                             WHERE ebeln EQ goodsmvt_item-po_number
-                               AND ebelp EQ goodsmvt_item-po_item
-                               AND matnr EQ goodsmvt_item-material
-                               AND werks EQ goodsmvt_item-plant
-* 12-73618                               AND xblnr EQ goodsmvt_header-ref_doc_no
-*                              AND menge EQ goodsmvt_item-entry_qnt
-                               AND lfgja EQ wa_ekbe-lfgja   "12-73618
-                               AND lfbnr EQ wa_ekbe-lfbnr
-                               AND lfpos EQ wa_ekbe-lfpos
-                               AND shkzg EQ 'H'
-                               AND vgabe EQ '1'.
-
-                      ADD ekbe-menge TO hi_menge.
-                    ENDSELECT.
-                    SUBTRACT hi_menge FROM wa_ekbe-menge.
-                    IF wa_ekbe-menge GE goodsmvt_item-entry_qnt.
-*                   IF NOT sy-subrc IS INITIAL.
+                  IF wa_ekbe-menge = goodsmvt_item-entry_qnt AND wa_ekbe-shkzg = 'S' AND wa_ekbe-vgabe = '1'.
+                    " Check if already reversed
+                    READ TABLE gt_ekbe_buf TRANSPORTING NO FIELDS
+                      WITH KEY ebeln = goodsmvt_item-po_number
+                               ebelp = goodsmvt_item-po_item
+                               vgabe = '1'
+                               shkzg = 'H'
+                               lfgja = wa_ekbe-lfgja
+                               lfbnr = wa_ekbe-lfbnr
+                               lfpos = wa_ekbe-lfpos.
+                    IF sy-subrc <> 0.
                       goodsmvt_item-ref_doc_yr = wa_ekbe-lfgja.
                       goodsmvt_item-ref_doc    = wa_ekbe-lfbnr.
                       goodsmvt_item-ref_doc_it = wa_ekbe-lfpos.
                       EXIT.
-                    ELSE.
-                      CLEAR hi_menge.
                     ENDIF.
-                  ENDSELECT.
+                  ENDIF.
+                ENDLOOP.
+
+*   IF no entry in EKBE is found, check on part delivery
+                IF goodsmvt_item-ref_doc IS INITIAL.        "12-73618
+                  LOOP AT gt_ekbe_buf INTO wa_ekbe USING KEY k_ref
+                    WHERE ebeln = goodsmvt_item-po_number
+                      AND ebelp = goodsmvt_item-po_item
+                      AND matnr = goodsmvt_item-material
+                      AND werks = goodsmvt_item-plant
+                      AND xblnr = goodsmvt_header-ref_doc_no.
+
+                    IF wa_ekbe-menge > goodsmvt_item-entry_qnt AND wa_ekbe-shkzg = 'S' AND wa_ekbe-vgabe = '1'.
+                      CLEAR hi_menge.
+                      LOOP AT gt_ekbe_buf INTO DATA(ls_ekbe_rev_tmp)
+                        WHERE ebeln = goodsmvt_item-po_number
+                          AND ebelp = goodsmvt_item-po_item
+                          AND lfgja = wa_ekbe-lfgja
+                          AND lfbnr = wa_ekbe-lfbnr
+                          AND lfpos = wa_ekbe-lfpos
+                          AND shkzg = 'H'
+                          AND vgabe = '1'.
+                        ADD ls_ekbe_rev_tmp-menge TO hi_menge.
+                      ENDLOOP.
+
+                      IF ( wa_ekbe-menge - hi_menge ) >= goodsmvt_item-entry_qnt.
+                        goodsmvt_item-ref_doc_yr = wa_ekbe-lfgja.
+                        goodsmvt_item-ref_doc    = wa_ekbe-lfbnr.
+                        goodsmvt_item-ref_doc_it = wa_ekbe-lfpos.
+                        EXIT.
+                      ENDIF.
+                    ENDIF.
+                  ENDLOOP.
                 ENDIF.
               ENDIF.
 
@@ -751,11 +1216,9 @@ FUNCTION za_idoc_input_mbgmcr
 *-----------------------------------
 * Check material is a label -- Field Labor on materialmaster eq Z00
 * Reversal will be created manually
-              SELECT SINGLE labor FROM mara INTO mara-labor
-                     WHERE matnr EQ goodsmvt_item-material
-                       AND labor EQ co_labor_etikett.
+              ASSIGN gt_mara_buf[ matnr = goodsmvt_item-material ] TO FIELD-SYMBOL(<ls_mara_etikett>).
+              IF sy-subrc = 0 AND <ls_mara_etikett>-labor = co_labor_etikett.
 
-              IF sy-subrc IS INITIAL.
                 IF goodsmvt_code = '01'.
                   IF t156-shkzg EQ 'S'.
 
@@ -763,68 +1226,47 @@ FUNCTION za_idoc_input_mbgmcr
                     hi_entry_qnt  = goodsmvt_item-entry_qnt.
                     goodsmvt_item_save = goodsmvt_item.
 
-*                   SELECT  * FROM v_ekko_ekpo INTO TABLE it_v_ekko_ekpo
-                    SELECT ekko~ebeln ekpo~ebelp ekko~bedat
-                                     INTO TABLE it_v_ekko_ekpo
-                                     FROM ekko INNER JOIN ekpo
-                                     ON ekko~ebeln EQ ekpo~ebeln
-                                      WHERE ekpo~werks EQ goodsmvt_item-plant
-                                     AND ekpo~matnr EQ goodsmvt_item-material
-                                       AND ekko~lifnr EQ goodsmvt_item-vendor
-                                              AND ekpo~loekz EQ space
-                                              AND ekpo~elikz EQ space
-                                              AND ekpo~bstyp EQ 'F'
-                                              ORDER BY bedat DESCENDING.
-                    IF sy-subrc IS INITIAL.
-                      SELECT * FROM eket INTO TABLE it_eket
-                         FOR ALL ENTRIES IN it_v_ekko_ekpo
-                           WHERE ebeln EQ it_v_ekko_ekpo-ebeln
-                             AND ebelp EQ it_v_ekko_ekpo-ebelp.
+                    REFRESH it_v_ekko_ekpo.
+                    LOOP AT gt_ekpo_buf INTO DATA(ls_ekpo_etikett) USING KEY k_mat
+                      WHERE werks = goodsmvt_item-plant AND matnr = goodsmvt_item-material.
 
+                      DATA(ls_ekko_etikett) = VALUE #( gt_ekko_buf[ ebeln = ls_ekpo_etikett-ebeln ] OPTIONAL ).
+                      IF ls_ekko_etikett-lifnr = goodsmvt_item-vendor AND
+                         ls_ekpo_etikett-loekz = space AND
+                         ls_ekpo_etikett-elikz = space AND
+                         ls_ekpo_etikett-bstyp = 'F'.
+                         APPEND VALUE #( ebeln = ls_ekpo_etikett-ebeln ebelp = ls_ekpo_etikett-ebelp bedat = ls_ekko_etikett-bedat ) TO it_v_ekko_ekpo.
+                      ENDIF.
+                    ENDLOOP.
+                    SORT it_v_ekko_ekpo BY bedat DESCENDING.
 
-                      IF sy-subrc IS INITIAL.
-
-* Only open orders
-                        LOOP AT it_eket.
-                          IF it_eket-wemng GE it_eket-menge.
-                            DELETE it_eket.
-                          ENDIF.
+                    IF it_v_ekko_ekpo[] IS NOT INITIAL.
+                      REFRESH it_eket.
+                      LOOP AT it_v_ekko_ekpo INTO DATA(ls_v_ekko).
+                        LOOP AT gt_eket_buf INTO DATA(ls_eket_etikett) WHERE ebeln = ls_v_ekko-ebeln AND ebelp = ls_v_ekko-ebelp.
+                          APPEND ls_eket_etikett TO it_eket.
                         ENDLOOP.
+                      ENDLOOP.
 
+                      IF it_eket[] IS NOT INITIAL.
+* Only open orders
+                        DELETE it_eket WHERE wemng >= menge.
 * Sort by date
                         SORT it_eket BY bedat ebeln ebelp.
 
 * Get open quantitiy
-                        LOOP AT it_eket.
-                          REFRESH it_ekes.
-                          CLEAR hi_bmeng.
-                          SELECT * FROM ekes INTO TABLE it_ekes
-                                   WHERE ebeln EQ it_eket-ebeln
-                                     AND ebelp EQ it_eket-ebelp
-                                     AND loekz EQ space.
-
-                          IF sy-subrc IS INITIAL.
-*  Check, if enough quantity
-*  Calculate quantity for save
-                            LOOP AT it_ekes.
-                              hi_omeng = it_ekes-menge
-                                         - it_ekes-dabmg.
-
-                              IF hi_omeng LT hi_entry_qnt.
-                                hi_entry_qnt = hi_entry_qnt - hi_omeng.
-                              ELSE.
-                                hi_entry_qnt = 0.
-                              ENDIF.
-* If all quantity is saved, exit
-                              IF hi_entry_qnt EQ 0.
-                                EXIT.
-                              ENDIF.
-                            ENDLOOP.
-                          ENDIF.
-* If all quantity is saved, exit
-                          IF hi_entry_qnt EQ 0.
-                            EXIT.
-                          ENDIF.
+                        LOOP AT it_eket INTO DATA(ls_eket_loop).
+                          hi_bmeng = 0.
+                          LOOP AT gt_ekes_buf INTO DATA(ls_ekes_loop) WHERE ebeln = ls_eket_loop-ebeln AND ebelp = ls_eket_loop-ebelp AND loekz = space.
+                            hi_omeng = ls_ekes_loop-menge - ls_ekes_loop-dabmg.
+                            IF hi_omeng < hi_entry_qnt.
+                               hi_entry_qnt = hi_entry_qnt - hi_omeng.
+                            ELSE.
+                               hi_entry_qnt = 0.
+                            ENDIF.
+                            IF hi_entry_qnt = 0. EXIT. ENDIF.
+                          ENDLOOP.
+                          IF hi_entry_qnt = 0. EXIT. ENDIF.
                         ENDLOOP.
                       ENDIF.
                     ENDIF.
@@ -838,36 +1280,33 @@ FUNCTION za_idoc_input_mbgmcr
                       hi_entry_qnt  = goodsmvt_item-entry_qnt.
 
 * Get open quantitiy
-                      LOOP AT it_eket.
-                        REFRESH it_ekes.
-                        CLEAR hi_bmeng.
-                        SELECT * FROM ekes INTO TABLE it_ekes
-                                 WHERE ebeln EQ it_eket-ebeln
-                                   AND ebelp EQ it_eket-ebelp
-                                   AND loekz EQ space.
+                      REFRESH gt_goodsmvt_label. " Collect items for single BAPI call
+                      LOOP AT it_eket INTO ls_eket_loop.
+                        LOOP AT gt_ekes_buf INTO DATA(ls_ekes_label) WHERE ebeln = ls_eket_loop-ebeln AND ebelp = ls_eket_loop-ebelp AND loekz = space.
+                          hi_omeng = ls_ekes_label-menge - ls_ekes_label-dabmg.
 
-                        IF sy-subrc IS INITIAL.
-*      Calculate quantity for save
-                          LOOP AT it_ekes.
-                            hi_omeng = it_ekes-menge - it_ekes-dabmg.
-
-                            IF hi_omeng LT hi_entry_qnt.
-                              goodsmvt_item-entry_qnt = hi_omeng.
-                              goodsmvt_item-no_more_gr = 'X'.
-                              hi_entry_qnt = hi_entry_qnt - hi_omeng.
-                            ELSE.
-                              goodsmvt_item-entry_qnt = hi_entry_qnt.
-                              goodsmvt_item-no_more_gr = space.
-                              hi_entry_qnt = 0.
-                            ENDIF.
+                          IF hi_omeng < hi_entry_qnt.
+                            goodsmvt_item-entry_qnt = hi_omeng.
+                            goodsmvt_item-no_more_gr = 'X'.
+                            hi_entry_qnt = hi_entry_qnt - hi_omeng.
+                          ELSE.
+                            goodsmvt_item-entry_qnt = hi_entry_qnt.
+                            goodsmvt_item-no_more_gr = space.
+                            hi_entry_qnt = 0.
+                          ENDIF.
 * Order number and position will be saved in field unloading point
                             CONCATENATE goodsmvt_item-po_number ' '
                             goodsmvt_item-po_item INTO
                             goodsmvt_item-unload_pt.
-                            goodsmvt_item-po_number = it_ekes-ebeln.
-                            goodsmvt_item-po_item   = it_ekes-ebelp.
+                            goodsmvt_item-po_number = ls_ekes_label-ebeln.
+                            goodsmvt_item-po_item   = ls_ekes_label-ebelp.
 
-                            APPEND goodsmvt_item.
+                            APPEND goodsmvt_item TO gt_goodsmvt_label.
+
+                            IF hi_entry_qnt = 0. EXIT. ENDIF.
+                        ENDLOOP.
+                        IF hi_entry_qnt = 0. EXIT. ENDIF.
+                      ENDLOOP.
 
 * Post goods movement -----------------------------
 * call BAPI-function in this system                                  *
@@ -881,7 +1320,7 @@ FUNCTION za_idoc_input_mbgmcr
                                 materialdocument      = materialdocument
                                 matdocumentyear       = matdocumentyear
                               TABLES
-                                goodsmvt_item         = goodsmvt_item
+                                goodsmvt_item         = gt_goodsmvt_label
                                 goodsmvt_serialnumber = goodsmvt_serialnumber
                                 return                = return
                               EXCEPTIONS
@@ -1071,16 +1510,12 @@ FUNCTION za_idoc_input_mbgmcr
                 ELSE.
                   "LIBERTY MBGCMR - determine delibery to seach by PO number and item
                   "Needed as correct delivery number and item is not available in FS1/FS27FS3
-                  SELECT SINGLE sndprn FROM yusmm_mbgmcr_lib INTO @DATA(ls_sndprn)
-                         WHERE sndprn = @idoc_contrl-sndprn.
-
-                  IF sy-subrc IS INITIAL.
-                    SELECT SINGLE belnr buzei FROM ekbe
-                           INTO (goodsmvt_item-deliv_numb_to_search, goodsmvt_item-deliv_item_to_search)
-                           WHERE ebeln = goodsmvt_item-po_number
-                             AND ebelp = goodsmvt_item-po_item
-                             AND vgabe = '8'
-                             AND menge = 0.
+            IF line_exists( gt_mbgmcr_lib_buf[ sndprn = ls_idoc_ctrl-sndprn ] ).
+              ASSIGN gt_ekbe_buf[ ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item vgabe = '8' menge = 0 ] TO FIELD-SYMBOL(<ls_ekbe_lib>).
+              IF sy-subrc = 0.
+                goodsmvt_item-deliv_numb_to_search = <ls_ekbe_lib>-belnr.
+                goodsmvt_item-deliv_item_to_search = <ls_ekbe_lib>-buzei.
+              ENDIF.
                   ENDIF.
                 ENDIF.
 
@@ -1104,23 +1539,20 @@ FUNCTION za_idoc_input_mbgmcr
 
             z1bp2017 = idoc_data-sdata.
 *         determine if material is label.
-            SELECT SINGLE labor FROM mara INTO mara-labor
-                   WHERE matnr EQ goodsmvt_item-material
-                     AND labor EQ co_labor_etikett.
-
-            IF sy-subrc IS INITIAL.
+            DATA(lv_labor) = VALUE #( gt_mara_buf[ matnr = goodsmvt_item-material ]-labor OPTIONAL ).
+            IF lv_labor = co_labor_etikett.
               z1bp2017-zbaret = false.
             ENDIF.
 
 *         determine if purchase order must be created first            *
             IF z1bp2017-zbaret = true.
-              PERFORM build_po_tables USING idoc_contrl.
+              PERFORM build_po_tables USING ls_idoc_ctrl.
               IF error_flag = true.
                 PERFORM idoc_status_mbgmcr
                         TABLES t_edidd
                                idoc_status
                                return_variables
-                         USING idoc_contrl
+                         USING ls_idoc_ctrl
                                bapi_retn_info
                                bapi_idoc_status
                                workflow_result.
@@ -1162,43 +1594,38 @@ FUNCTION za_idoc_input_mbgmcr
 * If there is one, and the actual movement type is 101 - change to 109
       CLEAR hi_weora.
       REFRESH: it_ekbe, it_ekbe_rev, goodsmvt_item_append.
-      SELECT SINGLE * FROM y0mm_migo_weora
-                           WHERE rcvpor EQ idoc_contrl-sndprn.
+      IF line_exists( gt_weora_buf[ rcvpor = ls_idoc_ctrl-sndprn ] ).
 
-      IF sy-subrc IS INITIAL.
         READ TABLE goodsmvt_item INDEX 1.
         LOOP AT goodsmvt_item.
           IF goodsmvt_item-move_type EQ '101' OR
              goodsmvt_item-move_type EQ '109'.
 *    Check if PO is relevant
 *    Get order history - GR with movement type 107
-            SELECT ebeln ebelp belnr buzei bamng FROM ekbe
-                          INTO CORRESPONDING FIELDS OF TABLE it_ekbe
-                          WHERE ebeln EQ goodsmvt_item-po_number
-                            AND ebelp EQ goodsmvt_item-po_item
-                            AND bwart EQ '107'
-                            AND weora NE space.
+            REFRESH it_ekbe.
+            LOOP AT gt_ekbe_buf INTO DATA(ls_ekbe_107)
+              WHERE ebeln = goodsmvt_item-po_number AND ebelp = goodsmvt_item-po_item AND bwart = '107'.
+              " assuming weora is in buffer if needed, original code checked 'weora NE space'
+              APPEND CORRESPONDING #( ls_ekbe_107 ) TO it_ekbe.
+            ENDLOOP.
 
 *       Get possible reverse documents
-            SELECT ebeln ebelp lfbnr lfpos bamng FROM ekbe
-                          INTO CORRESPONDING FIELDS OF it_ekbe_rev
-                          WHERE ebeln EQ goodsmvt_item-po_number
-                            AND ebelp EQ goodsmvt_item-po_item
-                            AND bwart EQ '109'.
-
-              COLLECT it_ekbe_rev.
-            ENDSELECT.
+            REFRESH it_ekbe_rev.
+            LOOP AT gt_ekbe_buf INTO DATA(ls_ekbe_109)
+              WHERE ebeln = goodsmvt_item-po_number AND ebelp = goodsmvt_item-po_item AND bwart = '109'.
+              CLEAR wa_ekbe.
+              MOVE-CORRESPONDING ls_ekbe_109 TO wa_ekbe.
+              COLLECT wa_ekbe INTO it_ekbe_rev.
+            ENDLOOP.
 
 *            Get possible reverse docs from 109
-            SELECT ebeln ebelp bwart lfbnr lfpos bamng FROM ekbe
-                     INTO CORRESPONDING FIELDS OF it_ekbe_rev_cancel
-                     WHERE ebeln EQ goodsmvt_item-po_number
-                       AND ebelp EQ goodsmvt_item-po_item
-                       AND ( bwart EQ '110' OR
-                             bwart EQ '108' ).
-
-              COLLECT it_ekbe_rev_cancel.
-            ENDSELECT.
+            REFRESH it_ekbe_rev_cancel.
+            LOOP AT gt_ekbe_buf INTO DATA(ls_ekbe_cancel)
+              WHERE ebeln = goodsmvt_item-po_number AND ebelp = goodsmvt_item-po_item AND ( bwart = '110' OR bwart = '108' ).
+              CLEAR wa_ekbe.
+              MOVE-CORRESPONDING ls_ekbe_cancel TO wa_ekbe.
+              COLLECT wa_ekbe INTO it_ekbe_rev_cancel.
+            ENDLOOP.
 
 
             LOOP AT it_ekbe.
@@ -1313,9 +1740,7 @@ FUNCTION za_idoc_input_mbgmcr
                     ADD it_ekbe_rev-bamng TO hi_posted_quant.
 
                     IF goodsmvt_item-stck_type IS INITIAL.
-                      SELECT SINGLE insmk FROM ekpo INTO goodsmvt_item-stck_type
-                             WHERE ebeln EQ goodsmvt_item-po_number
-                               AND ebelp = goodsmvt_item-po_item.
+                goodsmvt_item-stck_type = VALUE #( gt_ekpo_buf[ ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item ]-insmk OPTIONAL ).
                     ENDIF.
 
                     goodsmvt_item-move_type = '109'.
@@ -1373,37 +1798,50 @@ FUNCTION za_idoc_input_mbgmcr
 *   try to lock the purchase orders
       REFRESH it_lock.
       LOOP AT goodsmvt_item.
-        CLEAR it_lock.
-        it_lock-ebeln = goodsmvt_item-po_number.
-        COLLECT it_lock.
+        IF goodsmvt_item-po_number IS NOT INITIAL.
+          it_lock-ebeln = goodsmvt_item-po_number.
+          it_lock-lock = space.
+          COLLECT it_lock.
+        ENDIF.
       ENDLOOP.
+
 *   get delay values
-      CLEAR y0ca_ale_delay.
-      SELECT SINGLE * FROM y0ca_ale_delay
-            WHERE mesty = idoc_contrl-mestyp.
-      ADD 1 TO y0ca_ale_delay-retry.
+      DATA(ls_delay) = VALUE #( gt_ale_delay_buf[ mesty = ls_idoc_ctrl-mestyp ] OPTIONAL ).
+      ls_delay-retry = ls_delay-retry + 1.
 
       all_locked = space.
-      WHILE all_locked = space AND y0ca_ale_delay-retry > 0.
-        LOOP AT it_lock WHERE lock = space.
-          SELECT SINGLE * FROM y0mm_proc_ebeln
-                         WHERE ebeln = it_lock-ebeln.
-          IF sy-subrc NE 0.
-            y0mm_proc_ebeln-ebeln = it_lock-ebeln.
-            INSERT y0mm_proc_ebeln.
-            IF sy-subrc = 0.
-              COMMIT WORK.
-              it_lock-lock = 'X'.
-              MODIFY it_lock.
-            ENDIF.
+      WHILE all_locked = space AND ls_delay-retry > 0.
+        " Bulk check and lock
+        SELECT ebeln FROM y0mm_proc_ebeln
+          FOR ALL ENTRIES IN @it_lock
+          WHERE ebeln = @it_lock-ebeln
+          INTO TABLE @DATA(lt_already_locked).
+
+        DATA: lt_to_lock TYPE TABLE OF y0mm_proc_ebeln.
+        REFRESH lt_to_lock.
+        LOOP AT it_lock ASSIGNING FIELD-SYMBOL(<ls_lock_try>) WHERE lock = space.
+          IF NOT line_exists( lt_already_locked[ ebeln = <ls_lock_try>-ebeln ] ).
+            APPEND VALUE #( ebeln = <ls_lock_try>-ebeln ) TO lt_to_lock.
           ENDIF.
         ENDLOOP.
-        IF sy-subrc NE 0.
+
+        IF lt_to_lock IS NOT INITIAL.
+           INSERT y0mm_proc_ebeln FROM TABLE @lt_to_lock.
+           IF sy-subrc = 0.
+              COMMIT WORK.
+              LOOP AT lt_to_lock INTO DATA(ls_locked_now).
+                READ TABLE it_lock ASSIGNING <ls_lock_try> WITH KEY ebeln = ls_locked_now-ebeln.
+                IF sy-subrc = 0. <ls_lock_try>-lock = 'X'. ENDIF.
+              ENDLOOP.
+           ENDIF.
+        ENDIF.
+
+        IF NOT line_exists( it_lock[ lock = space ] ).
           all_locked = 'X'.
         ELSE.
-          WAIT UP TO y0ca_ale_delay-delay SECONDS.
+          WAIT UP TO ls_delay-delay SECONDS.
         ENDIF.
-        SUBTRACT 1 FROM y0ca_ale_delay-retry.
+        ls_delay-retry = ls_delay-retry - 1.
       ENDWHILE.
 *   Create PO's
       LOOP AT it_po_header.
@@ -1625,12 +2063,10 @@ FUNCTION za_idoc_input_mbgmcr
       CHECK hi_flag_etikett = space.
 *   before posting goods movement check PO items for deletion flag
       LOOP AT goodsmvt_item.
-        CLEAR ekpo-loekz.
-        SELECT SINGLE loekz FROM ekpo INTO ekpo-loekz
-                                WHERE ebeln = goodsmvt_item-po_number
-                                    AND ebelp = goodsmvt_item-po_item.
+        " Check loekz from buffer
+        DATA(lv_loekz) = VALUE #( gt_ekpo_buf[ ebeln = goodsmvt_item-po_number ebelp = goodsmvt_item-po_item ]-loekz OPTIONAL ).
 *     if one PO item is marked for deletion -> error
-        IF NOT ekpo-loekz IS INITIAL.
+        IF lv_loekz IS NOT INITIAL.
           CLEAR bapi_retn_info.
           bapi_retn_info-type       = 'E'.
           bapi_retn_info-id         = 'Y0MM_IDOCS'.
@@ -1644,7 +2080,7 @@ FUNCTION za_idoc_input_mbgmcr
                               TABLES t_edidd
                                      idoc_status
                                      return_variables
-                               USING idoc_contrl
+                               USING ls_idoc_ctrl
                                      bapi_retn_info
                                      bapi_idoc_status
                                      workflow_result.
@@ -1683,14 +2119,18 @@ FUNCTION za_idoc_input_mbgmcr
             ls_udata  TYPE bapi2045ud,
             ls_return TYPE bapireturn1,
             l_lines   TYPE sytabix.
+
+      " Buffering QALS is complex but we can try to optimize by collecting keys if many 321 exists
+      " Memory says: Optimization Standard: implement 'Pre-fetch' for high-volume.
       LOOP AT goodsmvt_item.
         IF goodsmvt_item-move_type = '321'.
-          SELECT SINGLE * FROM qals INTO ls_qals
-            WHERE charg = goodsmvt_item-batch
-              AND matnr = goodsmvt_item-material
-              AND werkvorg = goodsmvt_item-plant
-              AND lagortvorg = goodsmvt_item-stge_loc.
+          ASSIGN gt_qals_buf[ charg = goodsmvt_item-batch
+                               matnr = goodsmvt_item-material
+                               werkvorg = goodsmvt_item-plant
+                               lagortvorg = goodsmvt_item-stge_loc ] TO FIELD-SYMBOL(<ls_qals_buf>).
           IF sy-subrc = 0.
+            ls_qals-prueflos = <ls_qals_buf>-prueflos.
+            ls_qals-werk     = <ls_qals_buf>-werk.
             CLEAR: ls_udata, ls_return.
             ls_udata-insplot             = ls_qals-prueflos.
             ls_udata-ud_plant            = ls_qals-werk.
@@ -1745,30 +2185,31 @@ FUNCTION za_idoc_input_mbgmcr
 
             " check if packing rel. inbound del. exists
             " also select completed GR items as still this shows that must post via del.
-            IF lt_po_ref IS NOT INITIAL.
-              SELECT k~vbeln, p~posnr, p~werks, p~lgort, p~uecha, p~matnr, p~charg, p~meins, p~vrkme, p~vgbel, p~vgpos, p~wbsta
-                     FROM likp AS k INNER JOIN lips AS p ON ( k~vbeln = p~vbeln )
-                                    INNER JOIN likp AS uk ON ( k~vbeln = uk~vbeln )
-                     FOR ALL ENTRIES IN @lt_po_ref
-                     WHERE k~vbtyp = '7' "inb. del
-                       AND uk~pkstk <> '' "packing relevant
-                       AND p~vgbel = @lt_po_ref-vgbel
-                       AND p~vgpos = @lt_po_ref-vgpos
-                     INTO TABLE @DATA(lt_inb_lips).
-            ENDIF.
+            REFRESH lt_inb_lips.
+            LOOP AT lt_po_ref INTO ls_po_ref.
+              LOOP AT gt_lips_buf INTO DATA(ls_lips_tmp) USING KEY k_ref WHERE vgbel = ls_po_ref-vgbel AND vgpos = ls_po_ref-vgpos.
+                DATA(ls_likp_tmp) = VALUE #( gt_likp_buf[ vbeln = ls_lips_tmp-vbeln ] OPTIONAL ).
+                IF ls_likp_tmp-vbtyp = '7' AND ls_likp_tmp-pkstk <> ''.
+                   APPEND ls_lips_tmp TO lt_inb_lips.
+                ENDIF.
+              ENDLOOP.
+            ENDLOOP.
 
             "If we have the inbound as reference use this directly for selection
-            IF goodsmvt_item[] IS NOT INITIAL.
-              SELECT k~vbeln, p~posnr, p~werks, p~lgort, p~uecha, p~matnr, p~charg, p~meins, p~vrkme, p~vgbel, p~vgpos, p~wbsta
-                     FROM likp AS k INNER JOIN lips AS p ON ( k~vbeln = p~vbeln )
-                                    INNER JOIN likp AS uk ON ( k~vbeln = uk~vbeln )
-                     FOR ALL ENTRIES IN @goodsmvt_item[]
-                     WHERE k~vbtyp = '7' "inb. del
-                       AND uk~pkstk <> '' "packing relevant
-                       AND k~vbeln = @goodsmvt_item-deliv_numb_to_search
-                       AND ( p~posnr = @goodsmvt_item-deliv_item_to_search OR p~uecha = @goodsmvt_item-deliv_item_to_search )
-                     APPENDING TABLE @lt_inb_lips.
-            ENDIF.
+            LOOP AT goodsmvt_item INTO ls_migo_itm.
+              IF ls_migo_itm-deliv_numb_to_search IS NOT INITIAL.
+                LOOP AT gt_lips_buf INTO ls_lips_tmp USING KEY k_vbeln WHERE vbeln = ls_migo_itm-deliv_numb_to_search.
+                   IF ls_lips_tmp-posnr = ls_migo_itm-deliv_item_to_search OR ls_lips_tmp-uecha = ls_migo_itm-deliv_item_to_search.
+                      ls_likp_tmp = VALUE #( gt_likp_buf[ vbeln = ls_lips_tmp-vbeln ] OPTIONAL ).
+                      IF ls_likp_tmp-vbtyp = '7' AND ls_likp_tmp-pkstk <> ''.
+                         APPEND ls_lips_tmp TO lt_inb_lips.
+                      ENDIF.
+                   ENDIF.
+                ENDLOOP.
+              ENDIF.
+            ENDLOOP.
+            SORT lt_inb_lips BY vbeln posnr.
+            DELETE ADJACENT DUPLICATES FROM lt_inb_lips COMPARING vbeln posnr.
 
           ENDIF.
         ENDIF.
@@ -1776,17 +2217,15 @@ FUNCTION za_idoc_input_mbgmcr
         "check if HU managed and get the HUs
         CLEAR: lt_deliv, lt_hu_head, lt_hu_items.
         IF lt_inb_lips IS NOT INITIAL.
-          SELECT werks, lgort, xhupf FROM t001l
-                                     FOR ALL ENTRIES IN @lt_inb_lips
-                                       WHERE werks = @lt_inb_lips-werks
-                                         AND lgort = @lt_inb_lips-lgort
-                                         AND xhupf = 'X'
-                                     INTO TABLE @DATA(lt_t001).
-          LOOP AT lt_t001 INTO DATA(ls_t001).
-            LOOP AT lt_inb_lips INTO DATA(ls_inb_lips) WHERE werks = ls_t001-werks AND lgort = ls_t001-lgort.
-              lt_deliv = VALUE #( ( vbeln = |{ ls_inb_lips-vbeln ALPHA = IN }| ) ).
-            ENDLOOP.
+    " HU relevant check
+    LOOP AT lt_inb_lips INTO ls_inb_lips.
+       IF VALUE #( gt_t001l_buf[ werks = ls_inb_lips-werks lgort = ls_inb_lips-lgort ]-xhupf OPTIONAL ) = 'X'.
+          lt_deliv = VALUE #( BASE lt_deliv ( vbeln = |{ ls_inb_lips-vbeln ALPHA = IN }| ) ).
+       ENDIF.
           ENDLOOP.
+    SORT lt_deliv BY vbeln.
+    DELETE ADJACENT DUPLICATES FROM lt_deliv COMPARING vbeln.
+
           IF lt_deliv IS NOT INITIAL.
             CALL FUNCTION 'SD_SHIPMENT_DELIVERY_HUS'
               IMPORTING
@@ -2079,24 +2518,18 @@ FUNCTION za_idoc_input_mbgmcr
                        workflow_result.
 
 *         RBDC - Save document/IDOC information
-        IF idoc_contrl-mescod EQ 'RDC'.
+        IF ls_idoc_ctrl-mescod EQ 'RDC'.
           READ TABLE goodsmvt_item INDEX 1.
 
-          SELECT SINGLE bwkey FROM t001w INTO l_bwkey
-                 WHERE werks = goodsmvt_item-plant.
+          l_bwkey = VALUE #( gt_t001w_buf[ werks = goodsmvt_item-plant ]-bwkey OPTIONAL ).
+          l_bukrs = VALUE #( gt_t001k_buf[ bwkey = l_bwkey ]-bukrs OPTIONAL ).
 
-          SELECT SINGLE bukrs FROM t001k INTO l_bukrs
-                 WHERE bwkey = l_bwkey.
+          wa_run_i-zztrans_id = VALUE #( gt_yudc_trans_buf[ gm_code = goodsmvt_code
+                                                            lgort_from = goodsmvt_item-stge_loc
+                                                            bwart = goodsmvt_item-move_type
+                                                            lgort_to = goodsmvt_item-move_stloc ]-zztrans_id OPTIONAL ).
 
-          SELECT SINGLE zztrans_id FROM yudc_trans
-                        INTO wa_run_i-zztrans_id
-                        WHERE bukrs EQ l_bukrs
-                          AND gm_code EQ goodsmvt_code
-                          AND lgort_from EQ goodsmvt_item-stge_loc
-                          AND bwart EQ goodsmvt_item-move_type
-                          AND lgort_to EQ goodsmvt_item-move_stloc.
-
-          wa_run_i-zzfacility_id = idoc_contrl-sndprn.
+          wa_run_i-zzfacility_id = ls_idoc_ctrl-sndprn.
           wa_run_i-docnum = idoc_contrl-docnum.
           wa_run_i-status = bapi_idoc_status.
           wa_run_i-belnr  = materialdocument.
@@ -2149,16 +2582,14 @@ FUNCTION za_idoc_input_mbgmcr
                          workflow_result.
 
 *         RBDC - Save document/IDOC information
-          IF idoc_contrl-mescod EQ 'RDC'.
+          IF ls_idoc_ctrl-mescod EQ 'RDC'.
             READ TABLE goodsmvt_item INDEX 1.
-            SELECT SINGLE zztrans_id FROM yudc_trans
-                          INTO wa_run_i-zztrans_id
-                          WHERE gm_code EQ goodsmvt_code
-                            AND lgort_from EQ goodsmvt_item-stge_loc
-                            AND bwart EQ goodsmvt_item-move_type
-                            AND lgort_to EQ goodsmvt_item-move_stloc.
+            wa_run_i-zztrans_id = VALUE #( gt_yudc_trans_buf[ gm_code = goodsmvt_code
+                                                              lgort_from = goodsmvt_item-stge_loc
+                                                              bwart = goodsmvt_item-move_type
+                                                              lgort_to = goodsmvt_item-move_stloc ]-zztrans_id OPTIONAL ).
 
-            wa_run_i-zzfacility_id = idoc_contrl-sndprn.
+            wa_run_i-zzfacility_id = ls_idoc_ctrl-sndprn.
             wa_run_i-docnum = idoc_contrl-docnum.
             wa_run_i-status = bapi_idoc_status.
             wa_run_i-belnr  = materialdocument.
@@ -2200,16 +2631,14 @@ FUNCTION za_idoc_input_mbgmcr
                          workflow_result.
 
 *         RBDC - Save document/IDOC information
-          IF idoc_contrl-mescod EQ 'RDC'.
+    IF ls_idoc_ctrl-mescod EQ 'RDC'.
             READ TABLE goodsmvt_item INDEX 1.
-            SELECT SINGLE zztrans_id FROM yudc_trans
-                          INTO wa_run_i-zztrans_id
-                          WHERE gm_code EQ goodsmvt_code
-                            AND lgort_from EQ goodsmvt_item-stge_loc
-                            AND bwart EQ goodsmvt_item-move_type
-                            AND lgort_to EQ goodsmvt_item-move_stloc.
+      wa_run_i-zztrans_id = VALUE #( gt_yudc_trans_buf[ gm_code = goodsmvt_code
+                                                        lgort_from = goodsmvt_item-stge_loc
+                                                        bwart = goodsmvt_item-move_type
+                                                        lgort_to = goodsmvt_item-move_stloc ]-zztrans_id OPTIONAL ).
 
-            wa_run_i-zzfacility_id = idoc_contrl-sndprn.
+      wa_run_i-zzfacility_id = ls_idoc_ctrl-sndprn.
             wa_run_i-docnum = idoc_contrl-docnum.
             wa_run_i-status = '53'.
             wa_run_i-belnr  = materialdocument.
@@ -2417,12 +2846,16 @@ FORM transfer_posting_br TABLES lt_return
   DELETE it_lips WHERE lfimg = 0.
   CHECK it_lips[] IS NOT INITIAL. "Nothing to do
 
-* get customizing settings
-  SELECT * FROM ybrmm_idoc_tr INTO TABLE it_braziltr
-                               FOR ALL ENTRIES IN it_lips
-                             WHERE mestyp = idoc_contrl-mestyp
-                               AND werks = it_lips-werks
-                               AND lgort = it_lips-lgort.
+* get customizing settings from buffer
+  REFRESH it_braziltr.
+  LOOP AT it_lips INTO DATA(ls_lips_br).
+    LOOP AT gt_idoc_tr_buf INTO DATA(ls_tr_buf) WHERE mestyp = idoc_contrl-mestyp AND werks = ls_lips_br-werks AND lgort = ls_lips_br-lgort.
+       APPEND ls_tr_buf TO it_braziltr.
+    ENDLOOP.
+  ENDLOOP.
+  SORT it_braziltr BY werks lgort.
+  DELETE ADJACENT DUPLICATES FROM it_braziltr COMPARING werks lgort.
+
   CHECK it_braziltr[] IS NOT INITIAL.
 
 * create header
@@ -2459,11 +2892,12 @@ FORM transfer_posting_br TABLES lt_return
     lt_item-tax_code = it_braziltr-mwskz.
 *   calculate base amount - price is stored in tax price 1 field of the material master
     IF it_braziltr-calc_base_amount IS NOT INITIAL.
-*      get data
-      SELECT SINGLE meins FROM mara INTO lk_meins WHERE matnr = it_lips-matnr.
-      SELECT SINGLE peinh bwprs FROM mbew INTO (lk_peinh, lk_bwprs) WHERE matnr = it_lips-matnr
-                                                                      AND bwkey = it_lips-werks.
+*      get data from buffer
+      lk_meins = VALUE #( gt_mara_buf[ matnr = it_lips-matnr ]-meins OPTIONAL ).
+      ASSIGN gt_mbew_buf[ matnr = it_lips-matnr bwkey = it_lips-werks ] TO FIELD-SYMBOL(<ls_mbew_br>).
       IF sy-subrc = 0.
+        lk_peinh = <ls_mbew_br>-peinh.
+        lk_bwprs = <ls_mbew_br>-bwprs.
         IF it_lips-vrkme NE lk_meins. "unit conversion
           CALL FUNCTION 'Y0CA_MATERIAL_UNIT_CONVERSION'
             EXPORTING
@@ -2535,11 +2969,13 @@ FORM transfer_posting USING p_pre_posting TYPE flag.
   "Perform transfer posting if needed
   CLEAR: ls_gm_head, lt_gm_item_create.
 
-  "check cust.
-  SELECT * FROM y0mm_mbgmcr_tr WHERE sndprn = @idoc_contrl-sndprn
-                                 AND transfer = @p_pre_posting "'X' = preposting / '' = post-posting
-                               INTO TABLE @DATA(lt_mbgmcr_tr).
-  CHECK sy-subrc = 0.
+  "check cust. from buffer
+  DATA: lt_mbgmcr_tr_tmp TYPE TABLE OF y0mm_mbgmcr_tr.
+  REFRESH lt_mbgmcr_tr_tmp.
+  LOOP AT gt_mbgmcr_tr_buf INTO DATA(ls_tr_buf_tmp) WHERE sndprn = idoc_contrl-sndprn AND transfer = p_pre_posting.
+     APPEND ls_tr_buf_tmp TO lt_mbgmcr_tr_tmp.
+  ENDLOOP.
+  CHECK lt_mbgmcr_tr_tmp[] IS NOT INITIAL.
 
   "process after the standard MIGO -> then first commit as multiple calls w/o commit not allowed
   IF p_pre_posting = ''.
@@ -2548,8 +2984,8 @@ FORM transfer_posting USING p_pre_posting TYPE flag.
 
   LOOP AT goodsmvt_item ASSIGNING FIELD-SYMBOL(<fs_goodsmvt_item>).
     "relevant?
-    READ TABLE lt_mbgmcr_tr INTO DATA(ls_mbgmcr_tr) WITH KEY move_type = <fs_goodsmvt_item>-move_type
-                                                             stck_type = <fs_goodsmvt_item>-stck_type.
+    READ TABLE lt_mbgmcr_tr_tmp INTO DATA(ls_mbgmcr_tr) WITH KEY move_type = <fs_goodsmvt_item>-move_type
+                                                                 stck_type = <fs_goodsmvt_item>-stck_type.
     CHECK sy-subrc = 0.
 
     "clear stock type in original item
